@@ -1,0 +1,11 @@
+node_modules/
+dist/
+output/
+.DS_Store
+*.log
+music.wav
+verify_frames/
+.claude/*
+!.claude/skills/
+.codex/*
+!.codex/skills/

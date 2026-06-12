@@ -1,0 +1,39 @@
+{
+  "skill_name": "math-deck-video",
+  "evals": [
+    {
+      "id": 0,
+      "name": "integral-riemann-deck",
+      "prompt": "I tutor a high school senior who's about to start calculus. She's solid on functions and graphs but integrals feel like magic symbols to her. Build me an interactive HTML slide deck that explains what an integral actually is - the area-under-a-curve idea, Riemann rectangles getting thinner and converging, and at least one real-life use. Dark 3blue1brown-ish style with real animations, not bullet points. Just the deck for now - we'll decide about a video later.",
+      "expected_output": "A single self-contained HTML slide deck with choreographed beat-based animations (SVG draw-on, Riemann rectangle subdivision animation), KaTeX-rendered formulas, at least one interactive control, terse captions, dark Manim-style theme.",
+      "files": [],
+      "assertions": [
+        "single-self-contained-html: exactly one .html artifact that works standalone (only CDN dependencies like KaTeX/fonts; no local file references)",
+        "katex-math: the deck loads KaTeX and renders at least two real formulas through it (integral notation must be KaTeX, not plain text like 'S f(x)dx')",
+        "beat-navigation: slides advance through choreographed animation steps via keyboard (ArrowRight/Space handler) with multiple beats per slide, not static slides",
+        "svg-draw-on: SVG-based animated visuals with draw-on effects (stroke-dasharray/dashoffset tweening or equivalent), not CSS-only fades",
+        "riemann-convergence-animation: an animation where the number of rectangles under a curve increases and the sum visibly converges toward the area",
+        "real-life-application: at least one scene applying the integral to a real scenario (distance from speed, accumulated volume, etc.) with its own visual",
+        "interactive-control: at least one working slider or draggable element wired to recompute the visualization (e.g., rectangle count slider)",
+        "dark-manim-theme: near-black background via CSS variables, colored semantic palette, serif/mono font pairing; captions are single short lines, not paragraphs"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "unit-circle-sine-deck",
+      "prompt": "make me one of those animated explainer slide decks (html, single file) showing where sine waves actually come from - point going around the unit circle, the height tracing out the wave over time, why the period is 2pi, maybe amplitude/frequency sliders. for someone who knows basic trig ratios but has never connected the circle to the wave. keep text minimal, let the animation do the talking. deck only, no video.",
+      "expected_output": "A single self-contained HTML slide deck animating the unit-circle-to-sine-wave correspondence with a rotating point, traced wave, KaTeX labels, amplitude/frequency interactive sliders, beat-based navigation, dark theme.",
+      "files": [],
+      "assertions": [
+        "single-self-contained-html: exactly one .html artifact that works standalone (only CDN dependencies like KaTeX/fonts; no local file references)",
+        "katex-math: the deck loads KaTeX and renders formulas through it (sin notation, 2\\pi period labels as real math, not plain text)",
+        "beat-navigation: slides advance through choreographed animation steps via keyboard (ArrowRight/Space handler) with multiple beats per slide, not static slides",
+        "circle-to-wave-trace: the core animation shows a point rotating on a circle while a horizontal line/projection traces the sine wave over time, both visible simultaneously",
+        "period-2pi-scene: a scene explicitly connecting one full revolution to the 2\\pi period on the wave's axis",
+        "interactive-sliders: amplitude and/or frequency slider(s) that visibly reshape the wave when moved",
+        "dark-manim-theme: near-black background via CSS variables, colored semantic palette, serif/mono font pairing",
+        "minimal-text: captions are single short lines; no slide contains paragraph-length text blocks"
+      ]
+    }
+  ]
+}
