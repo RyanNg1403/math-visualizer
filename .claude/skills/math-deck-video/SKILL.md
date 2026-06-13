@@ -24,6 +24,8 @@ Produce **two artifacts, in this order**: an interactive HTML slide deck, then a
 
 If the user explicitly says they only want the deck (or only want to iterate on an existing deck), stop after Phase 1 and offer the video as a follow-up.
 
+**Where the artifacts go.** If the project defines a layout for explainers, follow it instead of inventing paths. In particular, if there is an `ARCHITECTURE.md` describing an `explainers/<id>/` convention (a per-concept folder holding `deck.html`, `<id>.mp4`, `poster.jpg`, and the `motion-canvas/` project, registered in `explainers/registry.ts`), produce the artifacts into a new `explainers/<id>/`, make a `poster.jpg` from a representative frame, and add one registry entry so the web app picks the lesson up. Absent such a convention, create one self-contained folder for the explainer. Either way: never commit regenerable intermediates (`node_modules/`, `output/`, `music.wav`, `dist/`, extracted verification frames).
+
 ## Phase 0 - Design the lesson (10 minutes of thinking, saves hours)
 
 Read `references/design-taste.md` first - it holds the judgment calls that make the result feel designed rather than generated. Then decide:

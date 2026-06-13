@@ -6,10 +6,10 @@ Manim-quality math explainers, built with plain web tech and rendered to video �
 
 | Path | What it is |
 |---|---|
-| `src/` + Vite files | **Math Visualizer** — Ivory Scholar chat and interactive STEM visualizer prototype, built as a Vite + TypeScript frontend. Run with `npm install` then `npm run dev`. |
-| `derivative-deck.html` | **The Derivative** — standalone interactive slide deck (13 scenes). Open directly in a browser; step through with `→` (each press plays one animation beat, Manim-style), `←` back, `r` replay. Sliders and draggable points on several slides, plus a 3-scene **3D act** (curve→surface, tangent plane, gradient) you can **click-drag to orbit**. |
-| `video-proto/the-derivative.mp4` | The same lesson as a ~3.4-min 1080p60 video with an ambient music bed, rendered from the Motion Canvas port in `video-proto/motion-canvas/`. It builds from the 1-D tangent line all the way to the tangent plane and gradient descent in 3-D. |
-| `codex-test/` | A second, independently produced explainer (**Taylor series**: `taylor-deck.html` + `taylor.mp4`) — built by an agent following the skill, with its build report in `REPORT.md`. |
+| `src/` + `index.html` (Vite) | **Math Visualizer** — Ivory Scholar chat / interactive web app that plays the explainer videos. Sources its lessons from the registry. Run with `npm install` then `npm run dev`. |
+| `explainers/<id>/` | One self-contained STEM lesson each — `deck.html` (standalone interactive deck), `<id>.mp4` (1080p60 video), `poster.jpg`, and the `motion-canvas/` project that renders it. Currently **derivative** (slope → tangent plane → gradient, with a click-to-orbit 3D act) and **taylor**. Open any `deck.html` directly in a browser. |
+| `explainers/registry.ts` | **Single source of truth** — the typed list of explainers the web app renders from. Adding a lesson = drop a folder + one entry here. |
+| `ARCHITECTURE.md` | The project structure and the step-by-step recipe for adding a new explainer. |
 | `.codex/skills/math-deck-video/` (mirrored at `.claude/skills/`) | **The skill**: a complete playbook for producing these — design taste, deck architecture, Motion Canvas port recipe, verified reference implementations to copy from, music/mux pipeline, and the phase-gate checklist. |
 
 ## Using the skill
@@ -27,9 +27,11 @@ To install the skill elsewhere, copy `math-deck-video/` into your personal skill
 The Motion Canvas projects ship without `node_modules` or rendered intermediates:
 
 ```bash
-cd video-proto/motion-canvas   # or codex-test/motion-canvas
+cd explainers/<id>/motion-canvas    # e.g. explainers/derivative/motion-canvas
 npm install
-npx vite                       # opens the Motion Canvas editor; render via the RENDER button
+npx vite                            # opens the Motion Canvas editor; render via the RENDER button
 ```
 
-Requirements: node ≥ 22, ffmpeg, python3 + numpy (for the music generator, `video-proto/gen_music.py`).
+Requirements: node ≥ 22, ffmpeg, python3 + numpy (for the music generator, `explainers/<id>/gen_music.py`).
+
+See **[ARCHITECTURE.md](ARCHITECTURE.md)** for the full project structure and the recipe to add a new explainer.

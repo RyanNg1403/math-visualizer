@@ -1,5 +1,10 @@
-export const derivativeVideoUrl = new URL('../video-proto/the-derivative.mp4', import.meta.url).href;
-export const derivativePosterUrl = new URL('./assets/derivative-preview.jpg', import.meta.url).href;
+// Lesson assets come from the shared explainer registry (the single source of
+// truth). Add a new entry there and it's available here — see ARCHITECTURE.md.
+import { getExplainer } from '../explainers/registry';
+
+const derivative = getExplainer('derivative')!;
+export const derivativeVideoUrl = derivative.video;
+export const derivativePosterUrl = derivative.poster;
 
 export const appHtml = `<div class="app">
   <aside class="sidebar" aria-label="Workspace">

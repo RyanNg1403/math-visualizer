@@ -1,6 +1,6 @@
 # Working agreement for this directory
 
-You have an installed agent skill named **math-deck-video** (project skills dir: `../.codex/skills/math-deck-video/`; it may also be installed at `~/.codex/skills/math-deck-video/`). If skill discovery did not surface it, read its entry point directly: `../.codex/skills/math-deck-video/SKILL.md`.
+You have an installed agent skill named **math-deck-video** (project skills dir: `../../.codex/skills/math-deck-video/`; it may also be installed at `~/.codex/skills/math-deck-video/`). If skill discovery did not surface it, read its entry point directly: `../../.codex/skills/math-deck-video/SKILL.md`.
 
 Follow that playbook exactly for any visual-explainer task in this directory — it encodes the workflow, quality bar, reference implementations to copy from, and the known bugs to avoid. Read the reference files it points to at the moment each phase begins, and respect its phase-gate checklist (`references/checklist.md`): do not advance past a gate with unverified items.
 
