@@ -1,0 +1,2 @@
+slide 5: context=too wide
+slide 7: head=properties

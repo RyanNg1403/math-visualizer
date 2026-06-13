@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-Attention, Visually</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+  :root{
+    --bg:#0b0e15;
+    --panel:#121624;
+    --ink:#e9e7df;
+    --dim:#69718a;
+    --faint:#343b50;
+    --blue:#58c4dd;
+    --yellow:#ffd45e;
+    --green:#7fd483;
+    --red:#ff6f61;
+    --purple:#c792ea;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(1100px 680px at 50% 16%, #131829 0%, var(--bg) 62%), var(--bg);
+    color:var(--ink);
+    font-family:'Karla',sans-serif;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #deck{position:fixed;inset:0 0 56px 0}
+  .slide{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    padding:14px 40px 18px;opacity:0;transform:translateY(16px);
+    transition:opacity .45s ease,transform .45s ease;
+  }
+  .slide.active{opacity:1;transform:translateY(0)}
+  .frame{width:min(1160px,96vw);display:flex;flex-direction:column;gap:10px}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+  .kicker{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.22em;
+    color:var(--dim);text-transform:uppercase;
+  }
+  h2{
+    font-family:'Fraunces',serif;font-weight:600;font-size:clamp(22px,3vw,33px);
+    letter-spacing:0;
+  }
+  h2 em{color:var(--yellow);font-style:italic;font-weight:400}
+  .beats{display:flex;gap:5px;align-items:center}
+  .beats i{width:7px;height:7px;background:var(--faint);transform:rotate(45deg);transition:background .3s}
+  .beats i.done{background:var(--yellow)}
+  .stage{position:relative;width:100%}
+  .stage svg{display:block;width:100%;height:auto}
+  .overlay{position:absolute;inset:0;pointer-events:none}
+  .overlay .ui{pointer-events:auto}
+  .caption{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:400;
+    font-size:19.5px;line-height:1.4;color:#b9c0d2;min-height:34px;
+    text-align:center;align-self:center;max-width:66ch;transition:opacity .18s;
+  }
+  .caption.fading{opacity:0}
+  .caption b{color:var(--ink)}
+  .caption .y{color:var(--yellow)} .caption .bl{color:var(--blue)}
+  .caption .g{color:var(--green)} .caption .r{color:var(--red)} .caption .p{color:var(--purple)}
+  .tok rect{fill:#121827;stroke:#2a3147;stroke-width:1.2;rx:7}
+  .tok text{
+    fill:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:17px;
+    dominant-baseline:middle;text-anchor:middle;
+  }
+  .tok.yellow rect{stroke:var(--yellow);fill:#2a2518}
+  .tok.blue rect{stroke:var(--blue);fill:#13232d}
+  .tok.green rect{stroke:var(--green);fill:#16291d}
+  .tok.purple rect{stroke:var(--purple);fill:#21182a}
+  .tok.red rect{stroke:var(--red);fill:#2a1918}
+  .label{
+    fill:#b9c0d2;font-family:'IBM Plex Mono',monospace;font-size:13px;
+    letter-spacing:.06em;text-transform:uppercase;
+  }
+  .plain{
+    fill:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:17px;
+  }
+  .serif{
+    fill:var(--ink);font-family:'Fraunces',serif;font-size:34px;font-weight:300;
+  }
+  .small{font-size:14px;fill:#aeb6c8}
+  .beam{fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+  .axis{stroke:#5a6378;stroke-width:1.4;opacity:.75}
+  .grid{stroke:#ffffff;stroke-opacity:.04;stroke-width:1}
+  .vecbar{rx:2}
+  .pill{
+    position:absolute;font-family:'IBM Plex Mono',monospace;font-size:13.5px;
+    color:var(--ink);background:#171c2cdd;border:1px solid #2a3147;
+    border-radius:7px;padding:7px 12px;white-space:nowrap;
+  }
+  .pill .lab{color:var(--dim)}
+  .pill .y{color:var(--yellow)} .pill .bl{color:var(--blue)}
+  .pill .g{color:var(--green)} .pill .r{color:var(--red)} .pill .p{color:var(--purple)}
+  .eq{position:absolute;color:var(--ink)}
+  .eq .katex{font-size:1.24em}
+  .eq.big .katex{font-size:1.65em}
+  .ctrl{
+    position:absolute;display:flex;gap:14px;align-items:center;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--dim);
+    background:#171c2cdd;border:1px solid #2a3147;border-radius:9px;padding:9px 14px;
+  }
+  .ctrl input[type=range]{accent-color:var(--yellow);width:210px;cursor:pointer}
+  .ctrl .val{color:var(--yellow);min-width:112px}
+  .meter{
+    position:absolute;width:210px;height:12px;background:#1a2030;border:1px solid #2c344b;
+    border-radius:999px;overflow:hidden;
+  }
+  .meter span{display:block;height:100%;width:0;background:var(--yellow)}
+  .fade0{opacity:0;transition:opacity .65s ease,transform .65s ease;transform:translateY(8px)}
+  .fade0.in{opacity:1;transform:none}
+  .titlebox{position:absolute;left:0;right:0;top:8%;text-align:center;pointer-events:none}
+  .titlebox .over{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.3em;color:var(--dim);text-transform:uppercase}
+  .titlebox h1{
+    font-family:'Fraunces',serif;font-weight:300;font-size:clamp(44px,7vw,84px);
+    letter-spacing:0;margin-top:10px;
+  }
+  .titlebox h1 em{font-style:italic;font-weight:600;color:var(--yellow)}
+  .titlebox .sub{margin-top:12px;color:#aab1c4;font-size:17px}
+  .hud{
+    position:fixed;left:0;right:0;bottom:0;height:56px;z-index:40;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 26px;border-top:1px solid #1d2335;
+    background:linear-gradient(#0b0e1500,#0b0e15ee 40%);
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--dim);
+  }
+  .hud-c{display:flex;align-items:center;gap:16px}
+  .hud button{
+    background:none;border:1px solid #2a3147;color:var(--ink);width:30px;height:30px;
+    border-radius:7px;cursor:pointer;font-size:14px;line-height:1;
+  }
+  .hud button:hover{border-color:var(--yellow);color:var(--yellow)}
+  .dots{display:flex;gap:7px}
+  .dots i{width:6px;height:6px;border-radius:50%;background:var(--faint);transition:all .3s}
+  .dots i.cur{background:var(--yellow);transform:scale(1.35)}
+  .dots i.seen{background:#6b6347}
+  kbd{border:1px solid #2a3147;border-radius:4px;padding:1px 5px;font-size:10.5px;font-family:inherit;color:#9aa2b6;margin-left:4px}
+  .grain{
+    position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.045;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>
+</head>
+<body>
+<div id="deck"></div>
+<div class="hud">
+  <div class="tag">self-attention · visual explainer</div>
+  <div class="hud-c">
+    <button id="bPrev" aria-label="previous">&larr;</button>
+    <div class="dots" id="dots"></div>
+    <button id="bNext" aria-label="next">&rarr;</button>
+  </div>
+  <div><span id="counter">01 / 08</span><kbd>&larr;</kbd><kbd>&rarr;</kbd><kbd>r</kbd></div>
+</div>
+<div class="grain"></div>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script>
+'use strict';
+const EASE = {
+  linear: t => t,
+  inOutCubic: t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
+  outCubic: t => 1 - Math.pow(1-t,3),
+  outBack: t => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3*Math.pow(t-1,3) + c1*Math.pow(t-1,2); },
+  inOutSine: t => -(Math.cos(Math.PI*t)-1)/2,
+};
+const activeTweens = new Set();
+function tween({dur=800, ease='inOutCubic', update=()=>{}}) {
+  return new Promise(res => {
+    const E = EASE[ease] || EASE.inOutCubic;
+    const tw = {};
+    let raf, start;
+    tw.finish = () => { cancelAnimationFrame(raf); activeTweens.delete(tw); update(1); res(); };
+    const frame = now => {
+      if (start === undefined) start = now;
+      const t = Math.min((now-start)/dur, 1);
+      update(E(t));
+      if (t < 1) raf = requestAnimationFrame(frame);
+      else { activeTweens.delete(tw); res(); }
+    };
+    activeTweens.add(tw);
+    raf = requestAnimationFrame(frame);
+  });
+}
+const flushTweens = () => [...activeTweens].forEach(t => t.finish());
+const wait = ms => tween({dur: ms, ease:'linear'});
+const lerp = (a,b,t) => a + (b-a)*t;
+const clamp = (v,a,b) => Math.min(Math.max(v,a),b);
+const fmt = (n,d=2) => n.toFixed(d);
+const NS = 'http://www.w3.org/2000/svg';
+function el(name, attrs={}, parent=null) {
+  const n = document.createElementNS(NS, name);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function htm(parent, cls, css, inner='') {
+  const d = document.createElement('div');
+  d.className = cls;
+  Object.assign(d.style, css);
+  d.innerHTML = inner;
+  parent.appendChild(d);
+  return d;
+}
+function tex(elm, s, opts={}) {
+  try { katex.render(s, elm, Object.assign({throwOnError:false, strict:false}, opts)); }
+  catch(e) { elm.textContent = s; }
+}
+function fadeIn(node, dur=550, dy=0) {
+  node.style.opacity = 0;
+  return tween({dur, ease:'outCubic', update: t => {
+    node.style.opacity = t;
+    if (dy) node.style.transform = t === 1 ? '' : `translateY(${dy*(1-t)}px)`;
+  }});
+}
+function fadeInHtml(node, dur=650) {
+  node.classList.add('fade0');
+  void node.offsetWidth;
+  node.classList.add('in');
+  return wait(dur);
+}
+function drawOn(path, dur=1000, ease='inOutCubic') {
+  const L = path.getTotalLength();
+  path.style.strokeDasharray = L;
+  path.style.strokeDashoffset = L;
+  path.style.opacity = 1;
+  return tween({dur, ease, update: t => path.style.strokeDashoffset = L*(1-t)})
+    .then(() => { path.style.strokeDasharray = 'none'; });
+}
+function token(parent, word, x, y, opts={}) {
+  const w = opts.w || Math.max(70, word.length * 13 + 28);
+  const h = opts.h || 42;
+  const g = el('g', {class:`tok ${opts.cls||''}`, transform:`translate(${x},${y})`, opacity: opts.opacity ?? 1}, parent);
+  el('rect', {x:-w/2, y:-h/2, width:w, height:h}, g);
+  const txt = el('text', {x:0, y:1}, g);
+  txt.textContent = word;
+  return {g, x, y, w, h, text: txt};
+}
+function sentence(parent, words, y, start=70, gap=11, opts={}) {
+  let x = start;
+  const out = [];
+  words.forEach((word, i) => {
+    const w = opts.widths?.[i] || Math.max(60, word.length * 12 + 26);
+    const t = token(parent, word, x + w/2, y, {w, cls: opts.classes?.[i] || '', opacity: opts.opacity ?? 1});
+    out.push(t);
+    x += w + gap;
+  });
+  return out;
+}
+function beam(parent, a, b, color, width=3, opacity=.85, bend=-80) {
+  const ay = a.h ? a.y - a.h/2 - 2 : a.y;
+  const by = b.h ? b.y - b.h/2 - 2 : b.y;
+  const mx = (a.x + b.x) / 2;
+  const d = `M ${a.x} ${ay} C ${mx} ${ay + bend}, ${mx} ${by + bend}, ${b.x} ${by}`;
+  return el('path', {d, class:'beam', stroke:color, 'stroke-width':width, opacity}, parent);
+}
+function vec(parent, x, y, values, color, scale=46) {
+  const g = el('g', {transform:`translate(${x},${y})`, opacity:0}, parent);
+  values.forEach((v, i) => {
+    const h = Math.max(8, Math.abs(v) * scale);
+    const yy = v >= 0 ? -h : 0;
+    el('rect', {class:'vecbar', x:i*16, y:yy, width:10, height:h, fill: color, opacity:.86}, g);
+    el('line', {x1:i*16-2, y1:0, x2:i*16+13, y2:0, stroke:'#3f465c', 'stroke-width':1}, g);
+  });
+  return g;
+}
+function softmax2(a, b) {
+  const ea = Math.exp(a), eb = Math.exp(b), z = ea + eb;
+  return [ea/z, eb/z];
+}
+function setText(node, s) { node.textContent = s; return node; }
+
+const WORDS = ['The','animal',"didn't",'cross','the','street','because','it','was','too'];
+
+const slides = [
+{
+  kicker:'01 · attention mechanism',
+  title:'Attention means choosing what to look at',
+  vh:520,
+  setup(c) {
+    htm(c.ov, 'titlebox', {}, `
+      <div class="over">a visual introduction</div>
+      <h1>The <em>Attention</em> Mechanism</h1>
+      <div class="sub">how a model chooses the context that matters</div>`);
+    const g = el('g', {opacity:0}, c.svg);
+    const toks = sentence(g, WORDS, 318, 55, 9, {classes:{1:'blue',5:'green',7:'yellow'}});
+    const it = toks[7], animal = toks[1], street = toks[5];
+    const b1 = beam(g, it, animal, 'var(--blue)', 5, .0, -145);
+    const b2 = beam(g, it, street, 'var(--green)', 5, .0, -95);
+    const q = htm(c.ov, 'pill', {left:'50%', top:'67%', transform:'translateX(-50%)', opacity:0},
+      `<span class="lab">prediction asks:</span> what should come after <span class="y">too</span>?`);
+    c.refs = {g, toks, b1, b2, q};
+  },
+  beats: [
+    async c => {
+      c.say(`Attention is a way for a model to ask: <b>what should I look at right now?</b>`);
+      await fadeIn(c.refs.g, 900, 0);
+      await fadeInHtml(c.refs.q);
+    },
+    async c => {
+      c.say(`In <b>self-attention</b>, words look at other words in the same sentence.`);
+      await Promise.all([drawOn(c.refs.b1, 900), drawOn(c.refs.b2, 900)]);
+    },
+  ],
+},
+{
+  kicker:'02 · tokens become vectors',
+  title:'First, text becomes <em>tokens</em>',
+  vh:520,
+  setup(c) {
+    const top = el('text', {x:560, y:86, class:'serif', 'text-anchor':'middle'}, c.svg);
+    top.textContent = 'A model does not receive a sentence as one object.';
+    const toks = sentence(c.svg, WORDS, 190, 55, 9, {opacity:0, classes:{1:'blue',5:'green',7:'yellow'}});
+    const vectors = el('g', {opacity:0}, c.svg);
+    toks.forEach((t, i) => {
+      const vals = [0.3 + (i%3)*.12, 0.7 - (i%4)*.08, 0.22 + (i%5)*.09, 0.5 - (i%2)*.16];
+      vec(vectors, t.x-28, 310, vals, i === 7 ? 'var(--yellow)' : 'var(--blue)', 34).style.opacity = 1;
+    });
+    const lab1 = el('text', {x:72, y:139, class:'label'}, c.svg); lab1.textContent = 'tokens';
+    const lab2 = el('text', {x:72, y:272, class:'label', opacity:0}, c.svg); lab2.textContent = 'vectors';
+    const eq = htm(c.ov, 'eq', {right:'4%', bottom:'15%', opacity:0}, '');
+    tex(eq, String.raw`\text{token}\rightarrow\text{vector}`);
+    c.refs = {top, toks, vectors, lab2, eq};
+  },
+  beats: [
+    async c => {
+      c.say(`It first breaks text into <b>tokens</b>: small pieces, often words.`);
+      for (const t of c.refs.toks) await fadeIn(t.g, 80, 0);
+    },
+    async c => {
+      c.say(`Each token gets a vector, so geometry can carry meaning.`);
+      await Promise.all([fadeIn(c.refs.vectors, 800), fadeIn(c.refs.lab2, 400), fadeIn(c.refs.eq, 650)]);
+    },
+  ],
+},
+{
+  kicker:'03 · the ambiguity',
+  title:'The same word can look in different places',
+  vh:520,
+  setup(c) {
+    const tired = sentence(c.svg, ['The','animal',"didn't",'cross','the','street','because','it','was','too','tired'], 180, 34, 6,
+      {classes:{1:'blue',5:'green',7:'yellow',10:'blue'}});
+    const wide = sentence(c.svg, ['The','animal',"didn't",'cross','the','street','because','it','was','too','wide'], 338, 34, 6,
+      {classes:{1:'blue',5:'green',7:'yellow',10:'green'}});
+    tired.forEach(t => t.g.setAttribute('opacity',0));
+    wide.forEach(t => t.g.setAttribute('opacity',0));
+    const l1 = el('text', {x:64, y:116, class:'label'}, c.svg); l1.textContent = 'case A';
+    const l2 = el('text', {x:64, y:274, class:'label'}, c.svg); l2.textContent = 'case B';
+    const beams = [
+      beam(c.svg, tired[7], tired[1], 'var(--blue)', 7, 0, -80),
+      beam(c.svg, wide[7], wide[5], 'var(--green)', 7, 0, -80),
+    ];
+    const tags = [
+      htm(c.ov, 'pill', {left:'11%', top:'44%', opacity:0}, `<span class="y">it</span> attends to <span class="bl">animal</span>`),
+      htm(c.ov, 'pill', {left:'53%', top:'74%', opacity:0}, `<span class="y">it</span> attends to <span class="g">street</span>`),
+    ];
+    c.refs = {tired, wide, beams, tags};
+  },
+  beats: [
+    async c => {
+      c.say(`If the next word is <span class="bl">tired</span>, the useful context is animal.`);
+      for (const t of c.refs.tired) await fadeIn(t.g, 50, 0);
+      await drawOn(c.refs.beams[0], 900);
+      await fadeInHtml(c.refs.tags[0]);
+    },
+    async c => {
+      c.say(`If the next word is <span class="g">wide</span>, the useful context is street.`);
+      for (const t of c.refs.wide) await fadeIn(t.g, 50, 0);
+      await drawOn(c.refs.beams[1], 900);
+      await fadeInHtml(c.refs.tags[1]);
+    },
+  ],
+},
+{
+  kicker:'04 · queries and keys',
+  title:'Self-attention starts with a small matching game',
+  vh:520,
+  setup(c) {
+    const toks = sentence(c.svg, WORDS, 330, 55, 9, {classes:{1:'blue',5:'green',7:'yellow'}, opacity:0});
+    const animal = toks[1], street = toks[5], it = toks[7];
+    const q = token(c.svg, 'query(it)', it.x, 136, {w:112, cls:'yellow', opacity:0});
+    const k1 = token(c.svg, 'key(animal)', animal.x, 216, {w:128, cls:'blue', opacity:0});
+    const k2 = token(c.svg, 'key(street)', street.x, 216, {w:122, cls:'green', opacity:0});
+    const b1 = beam(c.svg, q, k1, 'var(--blue)', 5, 0, -46);
+    const b2 = beam(c.svg, q, k2, 'var(--green)', 5, 0, -46);
+    const score1 = htm(c.ov, 'pill', {left:'12%', top:'42%', opacity:0}, `<span class="lab">score</span> = q_it &middot; k_animal`);
+    const score2 = htm(c.ov, 'pill', {left:'48%', top:'42%', opacity:0}, `<span class="lab">score</span> = q_it &middot; k_street`);
+    const defs = htm(c.ov, 'pill', {right:'4%', top:'13%', opacity:0},
+      `<span class="y">query</span>: what this word seeks<br><span class="bl">key</span>: what another word offers`);
+    c.refs = {toks, q, k1, k2, b1, b2, score1, score2, defs};
+  },
+  beats: [
+    async c => {
+      c.say(`A query asks what kind of context this word is looking for.`);
+      for (const t of c.refs.toks) await fadeIn(t.g, 40, 0);
+      await fadeIn(c.refs.q.g, 500, 0);
+      await fadeInHtml(c.refs.defs);
+    },
+    async c => {
+      c.say(`Keys answer: "I might be useful context." Dot products become scores.`);
+      await Promise.all([fadeIn(c.refs.k1.g, 500, 0), fadeIn(c.refs.k2.g, 500, 0)]);
+      await Promise.all([drawOn(c.refs.b1, 800), drawOn(c.refs.b2, 800)]);
+      await Promise.all([fadeInHtml(c.refs.score1), fadeInHtml(c.refs.score2)]);
+    },
+  ],
+},
+{
+  kicker:'05 · softmax turns scores into attention',
+  title:'Scores become weights',
+  vh:520,
+  setup(c) {
+    const toks = sentence(c.svg, WORDS, 150, 55, 9, {classes:{1:'blue',5:'green',7:'yellow'}, opacity:1});
+    const animal = toks[1], street = toks[5], it = toks[7];
+    const bAnimal = beam(c.svg, it, animal, 'var(--blue)', 3, .3, -100);
+    const bStreet = beam(c.svg, it, street, 'var(--green)', 3, .3, -72);
+    const scoreAnimal = htm(c.ov, 'pill', {left:'12%', top:'40%'}, '');
+    const scoreStreet = htm(c.ov, 'pill', {left:'45%', top:'40%'}, '');
+    const animalMeter = htm(c.ov, 'meter', {left:'13%', top:'53%'}, '<span></span>');
+    const streetMeter = htm(c.ov, 'meter', {left:'46%', top:'53%'}, '<span></span>');
+    const eq = htm(c.ov, 'eq', {right:'5%', top:'62%', opacity:0}, '');
+    tex(eq, String.raw`\text{weights}=\operatorname{softmax}(\text{scores})`);
+    const ctrl = htm(c.ov, 'ctrl ui', {left:'50%', bottom:'8%', transform:'translateX(-50%)'},
+      `<span>context</span><input type="range" min="0" max="1" step="0.01" value="0"><span class="val"></span>`);
+    c.refs = {bAnimal, bStreet, scoreAnimal, scoreStreet, animalMeter, streetMeter, eq, ctrl, mix:0};
+    c.update = () => {
+      const m = c.refs.mix;
+      const sAnimal = lerp(2.4, .55, m);
+      const sStreet = lerp(.65, 2.45, m);
+      const [wA, wS] = softmax2(sAnimal, sStreet);
+      bAnimal.setAttribute('stroke-width', 2 + 10*wA);
+      bStreet.setAttribute('stroke-width', 2 + 10*wS);
+      bAnimal.setAttribute('opacity', .25 + .75*wA);
+      bStreet.setAttribute('opacity', .25 + .75*wS);
+      scoreAnimal.innerHTML = `<span class="lab">animal score</span> <span class="bl">${fmt(sAnimal)}</span> &nbsp; <span class="lab">weight</span> <span class="bl">${fmt(wA)}</span>`;
+      scoreStreet.innerHTML = `<span class="lab">street score</span> <span class="g">${fmt(sStreet)}</span> &nbsp; <span class="lab">weight</span> <span class="g">${fmt(wS)}</span>`;
+      animalMeter.querySelector('span').style.width = `${wA*100}%`;
+      streetMeter.querySelector('span').style.width = `${wS*100}%`;
+      streetMeter.querySelector('span').style.background = 'var(--green)';
+      ctrl.querySelector('.val').textContent = m < .5 ? 'too tired' : 'too wide';
+    };
+    ctrl.querySelector('input').addEventListener('input', e => {
+      c.refs.mix = parseFloat(e.target.value);
+      c.update();
+    });
+    c.update();
+  },
+  beats: [
+    async c => {
+      c.say(`Softmax turns raw matches into percentages that add to one.`);
+      await fadeIn(c.refs.eq, 650);
+    },
+    async c => {
+      c.say(`Move the context. The strongest beam changes.`);
+      await tween({dur:2800, ease:'inOutSine', update: t => {
+        c.refs.mix = t;
+        c.refs.ctrl.querySelector('input').value = String(t);
+        c.update();
+      }});
+    },
+  ],
+},
+{
+  kicker:'06 · the value blend',
+  title:'The useful information gets mixed back in',
+  vh:520,
+  setup(c) {
+    const left = token(c.svg, 'animal value', 210, 170, {w:140, cls:'blue', opacity:0});
+    const right = token(c.svg, 'street value', 650, 170, {w:136, cls:'green', opacity:0});
+    const center = token(c.svg, 'updated it', 435, 346, {w:132, cls:'yellow', opacity:0});
+    const v1 = vec(c.svg, 174, 248, [.82,.35,.7,.25,.58], 'var(--blue)', 54);
+    const v2 = vec(c.svg, 614, 248, [.22,.78,.31,.84,.42], 'var(--green)', 54);
+    const vc = vec(c.svg, 395, 420, [.7,.44,.63,.36,.55], 'var(--yellow)', 46);
+    const b1 = beam(c.svg, left, center, 'var(--blue)', 8, 0, -58);
+    const b2 = beam(c.svg, right, center, 'var(--green)', 4, 0, -58);
+    const pred = htm(c.ov, 'pill', {right:'7%', top:'27%', opacity:0}, '');
+    const eq = htm(c.ov, 'eq', {right:'5%', top:'56%', opacity:0}, '');
+    tex(eq, String.raw`\text{new meaning}=\sum_i w_i\,\text{value}_i`);
+    c.refs = {left,right,center,v1,v2,vc,b1,b2,pred,eq};
+  },
+  beats: [
+    async c => {
+      c.say(`Values are the information each word contributes.`);
+      await Promise.all([fadeIn(c.refs.left.g, 450), fadeIn(c.refs.right.g, 450), fadeIn(c.refs.v1, 650), fadeIn(c.refs.v2, 650)]);
+    },
+    async c => {
+      c.say(`The weights decide the mixture, so <span class="y">it</span> gets a sharper meaning.`);
+      await Promise.all([drawOn(c.refs.b1, 900), drawOn(c.refs.b2, 900), fadeIn(c.refs.center.g, 650), fadeIn(c.refs.vc, 650), fadeIn(c.refs.eq, 650)]);
+      c.refs.pred.innerHTML = `<span class="lab">next word</span><br><span class="bl">tired</span> 0.72<br><span class="g">wide</span> 0.11`;
+      await fadeInHtml(c.refs.pred);
+    },
+    async c => {
+      c.say(`Change the context, and the prediction becomes precise in a different direction.`);
+      await tween({dur:2600, ease:'inOutSine', update: t => {
+        c.refs.b1.setAttribute('stroke-width', lerp(8, 4, t));
+        c.refs.b2.setAttribute('stroke-width', lerp(4, 8, t));
+        c.refs.b1.setAttribute('opacity', lerp(.9, .4, t));
+        c.refs.b2.setAttribute('opacity', lerp(.4, .9, t));
+        c.refs.pred.innerHTML = `<span class="lab">next word</span><br><span class="bl">tired</span> ${fmt(lerp(.72,.12,t))}<br><span class="g">wide</span> ${fmt(lerp(.11,.70,t))}`;
+      }});
+    },
+  ],
+},
+{
+  kicker:'07 · all at once',
+  title:'Every token can do this at the same time',
+  vh:520,
+  setup(c) {
+    const toks = sentence(c.svg, WORDS, 250, 55, 9, {classes:{1:'blue',5:'green',7:'yellow'}, opacity:1});
+    const beams = [];
+    for (let i = 0; i < toks.length; i++) {
+      if (i === 7) continue;
+      const target = i < 7 ? toks[Math.max(0, i-1)] : toks[7];
+      beams.push(beam(c.svg, toks[i], target, i % 3 === 0 ? 'var(--purple)' : i % 3 === 1 ? 'var(--blue)' : 'var(--green)', 2.3, 0, -50 - (i%3)*22));
+    }
+    const heads = [
+      htm(c.ov, 'pill', {left:'13%', top:'62%', opacity:0}, `<span class="p">head 1</span> follows grammar`),
+      htm(c.ov, 'pill', {left:'39%', top:'62%', opacity:0}, `<span class="bl">head 2</span> tracks references`),
+      htm(c.ov, 'pill', {left:'65%', top:'62%', opacity:0}, `<span class="g">head 3</span> watches properties`),
+    ];
+    const ctrl = htm(c.ov, 'ctrl ui', {left:'50%', bottom:'8%', transform:'translateX(-50%)', opacity:0},
+      `<span>head</span><input type="range" min="0" max="2" step="1" value="1"><span class="val">references</span>`);
+    c.refs = {toks, beams, heads, ctrl};
+    c.showHead = v => {
+      const labels = ['grammar','references','properties'];
+      c.refs.ctrl.querySelector('.val').textContent = labels[v];
+      c.refs.beams.forEach((b, i) => {
+        const on = i % 3 === v;
+        b.setAttribute('opacity', on ? .9 : .12);
+        b.setAttribute('stroke-width', on ? 5 : 1.4);
+      });
+      c.refs.heads.forEach((h, i) => h.style.opacity = i === v ? 1 : .25);
+    };
+    ctrl.querySelector('input').addEventListener('input', e => c.showHead(parseInt(e.target.value, 10)));
+    c.showHead(1);
+  },
+  beats: [
+    async c => {
+      c.say(`Self-attention is parallel: every word can update itself from context.`);
+      for (const b of c.refs.beams) await drawOn(b, 75);
+    },
+    async c => {
+      c.say(`Real transformers use several heads: several ways of looking at once.`);
+      await Promise.all(c.refs.heads.map(h => fadeInHtml(h)));
+      await fadeInHtml(c.refs.ctrl);
+      await tween({dur:2300, ease:'inOutSine', update: t => {
+        const v = t < .34 ? 0 : t < .67 ? 1 : 2;
+        c.refs.ctrl.querySelector('input').value = String(v);
+        c.showHead(v);
+      }});
+    },
+  ],
+},
+{
+  kicker:'08 · the formula, after the picture',
+  title:'The whole move in one line',
+  vh:520,
+  setup(c) {
+    const formula = htm(c.ov, 'eq big', {left:'50%', top:'23%', transform:'translateX(-50%)', opacity:0}, '');
+    tex(formula, String.raw`\operatorname{Attention}(Q,K,V)=\operatorname{softmax}\!\left(\frac{QK^T}{\sqrt{d_k}}\right)V`);
+    const parts = [
+      htm(c.ov, 'pill', {left:'12%', top:'55%', opacity:0}, `<span class="y">Q</span>: what each token seeks`),
+      htm(c.ov, 'pill', {left:'39%', top:'55%', opacity:0}, `<span class="bl">K</span>: what each token offers`),
+      htm(c.ov, 'pill', {left:'66%', top:'55%', opacity:0}, `<span class="g">V</span>: what each token contributes`),
+    ];
+    const quote = htm(c.ov, 'pill', {left:'50%', top:'72%', transform:'translateX(-50%)', opacity:0},
+      `<span class="lab">2017 paper:</span> <span class="y">Attention Is All You Need</span>`);
+    const final = el('text', {x:560, y:440, class:'serif', 'text-anchor':'middle', opacity:0}, c.svg);
+    final.textContent = 'Self-attention lets each token update itself using the context that matters.';
+    c.refs = {formula, parts, quote, final};
+  },
+  beats: [
+    async c => {
+      c.say(`The formula is just the picture written compactly.`);
+      await fadeIn(c.refs.formula, 900);
+      for (const p of c.refs.parts) await fadeInHtml(p);
+    },
+    async c => {
+      c.say(`A word becomes precise by learning where to look.`);
+      await fadeInHtml(c.refs.quote);
+      await fadeIn(c.refs.final, 900);
+    },
+  ],
+},
+];
+
+const deckEl = document.getElementById('deck');
+const dotsEl = document.getElementById('dots');
+const counterEl = document.getElementById('counter');
+let cur = 0, beat = 0, busy = false, slideNode = null, ctx = null;
+
+function makeDots() {
+  dotsEl.innerHTML = '';
+  slides.forEach((_, i) => {
+    const d = document.createElement('i');
+    if (i === cur) d.classList.add('cur');
+    if (i < cur) d.classList.add('seen');
+    dotsEl.appendChild(d);
+  });
+}
+function updateHud() {
+  counterEl.textContent = `${String(cur+1).padStart(2,'0')} / ${String(slides.length).padStart(2,'0')}`;
+  makeDots();
+  if (ctx) [...ctx.beats.children].forEach((b, i) => b.classList.toggle('done', i < beat));
+}
+function makeContext(s, node) {
+  const svg = node.querySelector('svg');
+  const ov = node.querySelector('.overlay');
+  const cap = node.querySelector('.caption');
+  const beats = node.querySelector('.beats');
+  const c = {
+    svg, ov, cap, beats, refs:{},
+    say(html) {
+      cap.classList.add('fading');
+      setTimeout(() => {
+        cap.innerHTML = html;
+        cap.classList.remove('fading');
+      }, 100);
+    },
+  };
+  s.beats.forEach(() => beats.appendChild(document.createElement('i')));
+  return c;
+}
+function renderSlide(i, autoplay=true) {
+  flushTweens();
+  cur = clamp(i, 0, slides.length-1);
+  beat = 0;
+  const s = slides[cur];
+  deckEl.innerHTML = `
+    <section class="slide active">
+      <div class="frame">
+        <header><div><div class="kicker">${s.kicker}</div><h2>${s.title}</h2></div><div class="beats"></div></header>
+        <div class="stage">
+          <svg viewBox="0 0 1120 ${s.vh}" role="img" aria-label="${s.title}"></svg>
+          <div class="overlay"></div>
+        </div>
+        <div class="caption">${s.caption || ''}</div>
+      </div>
+    </section>`;
+  slideNode = deckEl.querySelector('.slide');
+  ctx = makeContext(s, slideNode);
+  s.setup(ctx);
+  updateHud();
+  if (autoplay) setTimeout(() => playBeat(), 40);
+}
+async function playBeat() {
+  if (busy) { flushTweens(); return; }
+  const s = slides[cur];
+  if (beat >= s.beats.length) {
+    if (cur < slides.length - 1) renderSlide(cur + 1, true);
+    return;
+  }
+  busy = true;
+  const b = beat++;
+  updateHud();
+  try { await s.beats[b](ctx); }
+  catch(e) { console.error('beat error', e); }
+  busy = false;
+}
+function prev() { if (cur > 0) renderSlide(cur - 1, false); }
+function replay() { renderSlide(cur, true); }
+document.getElementById('bNext').addEventListener('click', playBeat);
+document.getElementById('bPrev').addEventListener('click', prev);
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); playBeat(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+  if (e.key.toLowerCase() === 'r') { e.preventDefault(); replay(); }
+});
+deckEl.addEventListener('click', e => {
+  if (e.target.closest('.ui')) return;
+  playBeat();
+});
+window.__deck = {
+  slides,
+  flushTweens,
+  playBeat,
+  goTo: (i, autoplay=false) => renderSlide(i, autoplay),
+  state: () => ({cur, beat, busy}),
+};
+renderSlide(0, true);
+</script>
+</body>
+</html>

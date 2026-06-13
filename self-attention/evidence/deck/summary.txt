@@ -1,0 +1,14 @@
+slides=8
+katex_nodes=4
+console_error_count=0
+screenshots=8
+slide 5: context=too wide
+slide 7: head=properties
+slide 1: 0
+slide 2: 1
+slide 3: 0
+slide 4: 0
+slide 5: 1
+slide 6: 1
+slide 7: 0
+slide 8: 1
