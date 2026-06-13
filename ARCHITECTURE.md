@@ -44,6 +44,11 @@ Each `explainers/<id>/` directory provides, by convention:
 - `<id>` is lowercase/kebab-case, and is **both** the folder name and the registry `id`.
 - The video is named `<id>.mp4`; the deck is always `deck.html`; the poster is always `poster.jpg`.
 
+**The video/deck contract (the rule):** within the web app, an explainer's **`video` illustrates
+the concept** (it's what plays in the lesson card), and its **`deck.html` powers interactive
+mode** (it's embedded in an `<iframe>`). Every explainer provides both, so every lesson gets a
+video to watch and a deck to play with — automatically, no per-lesson wiring.
+
 ## The registry — single source of truth
 
 `explainers/registry.ts` exports a typed `explainers: Explainer[]`. The web app (`src/`)
@@ -51,6 +56,19 @@ imports it; nothing else hard-codes lesson paths. Each asset URL **must** be wri
 `new URL('<string literal>', import.meta.url).href` so Vite can find the file and emit it
 as a fingerprinted asset — do **not** wrap that in a helper that takes a variable, or the
 asset silently won't be bundled.
+
+## The web app (`src/`)
+
+The app is a thin, registry-driven shell — no lesson content is hard-coded:
+
+- **Library** — the sidebar and home grid list every explainer from `registry.ts`. A new
+  registry entry shows up automatically.
+- **Lesson card** — selecting a lesson plays its `video` (the illustration).
+- **Interactive mode** — the card's *Interactive* button opens that lesson's `deck.html` in an
+  `<iframe>` (`#deckFrame`), lazy-loaded on first open.
+- **LLM seam** — `src/llm.ts` exports `generateLesson(prompt)`, the single place to wire a real
+  model/provider. It currently falls back to matching the prompt against the library so the app
+  works with nothing wired. **Never commit API keys** — read them server-side / from env.
 
 ## Add a new explainer (the recipe)
 
