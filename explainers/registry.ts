@@ -18,6 +18,9 @@ export interface Explainer {
   video: string;
   /** still frame used on web-app cards */
   poster: string;
+  /** optional one-line hint shown under the title in interactive mode,
+   *  describing this deck's specific controls. Falls back to a generic hint. */
+  hint?: string;
 }
 
 // NOTE: each URL must be a `new URL('<string literal>', import.meta.url)` so that
@@ -33,6 +36,7 @@ export const explainers: Explainer[] = [
     deck: new URL('./derivative/deck.html', import.meta.url).href,
     video: new URL('./derivative/derivative.mp4', import.meta.url).href,
     poster: new URL('./derivative/poster.jpg', import.meta.url).href,
+    hint: 'Press → to step through. In the 3-D act, drag the surface to orbit it.',
   },
   {
     id: 'taylor',
@@ -85,6 +89,26 @@ export const explainers: Explainer[] = [
       import.meta.url,
     ).href,
     poster: new URL('./activation-energy-catalyst/poster.jpg', import.meta.url).href,
+  },
+  {
+    id: 'self-attention',
+    title: 'Self-Attention',
+    blurb: 'How a transformer decides which words to look at — queries, keys, softmax, and the value blend.',
+    tags: ['computer science', 'deep learning', 'transformers'],
+    // NOTE: still at the old top-level path, not yet migrated into explainers/.
+    deck: new URL('../self-attention/self-attention-deck.html', import.meta.url).href,
+    video: new URL('../self-attention/self-attention.mp4', import.meta.url).href,
+    poster: new URL('../self-attention/poster.jpg', import.meta.url).href,
+  },
+  {
+    id: 'natural-selection',
+    title: 'Natural Selection',
+    blurb: 'How camouflage evolves — moths, a bird that hunts by sight, and bark that changes colour generation by generation.',
+    tags: ['biology', 'evolution', 'camouflage'],
+    deck: new URL('./natural-selection/deck.html', import.meta.url).href,
+    video: new URL('./natural-selection/natural-selection.mp4', import.meta.url).href,
+    poster: new URL('./natural-selection/poster.jpg', import.meta.url).href,
+    hint: 'Press → to step through. In the playground, darken the bark and release the bird.',
   },
 ];
 

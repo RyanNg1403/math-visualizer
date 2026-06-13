@@ -59,7 +59,7 @@ export const appHtml = `<div class="app">
           <div class="interactive-header">
             <div class="interactive-title">
               <strong id="interactiveTitle">Interactive explorer</strong>
-              <span id="interactiveSubtitle">Click the deck, then press → to step through. Drag the 3-D plots to orbit.</span>
+              <span id="interactiveSubtitle">Click the deck, then press → to step through and ← to go back.</span>
             </div>
             <div class="interactive-actions">
               <button class="secondary-action" type="button" data-view-choice="chat">Back to chat</button>

@@ -31,7 +31,10 @@ const conversationInner = getElement<HTMLElement>('conversationInner');
 const promptForm = getElement<HTMLFormElement>('promptForm');
 const lessonList = getElement<HTMLElement>('lessonList');
 const interactiveTitle = getElement<HTMLElement>('interactiveTitle');
+const interactiveSubtitle = getElement<HTMLElement>('interactiveSubtitle');
 const deckFrame = getElement<HTMLIFrameElement>('deckFrame');
+
+const DEFAULT_HINT = 'Click the deck, then press → to step through and ← to go back.';
 
 let currentLesson: Explainer | null = null;
 let loadedDeck: string | null = null; // which deck URL the iframe currently holds
@@ -104,7 +107,8 @@ function userMessageHtml(text: string): string {
     </article>`;
 }
 
-// The video illustrates the concept; the corner button opens the deck (interactive).
+// The video illustrates the concept; the actions row below opens the
+// interactive deck (in-app explorer) or the raw deck in a new tab.
 function lessonCardHtml(lesson: Explainer): string {
   const safeTitle = escapeHtml(lesson.title);
 
@@ -121,10 +125,6 @@ function lessonCardHtml(lesson: Explainer): string {
               </video>
               <button class="preview-play-button" type="button" data-play-preview aria-label="Play ${safeTitle} video">
                 <span class="play-glyph" aria-hidden="true"></span>
-              </button>
-              <button class="interactive-corner-button" type="button" data-open-interactive aria-label="Open interactive explorer" title="Open interactive explorer">
-                <span aria-hidden="true">↗</span>
-                <span>Interactive</span>
               </button>
             </div>
           </div>
@@ -152,12 +152,13 @@ function renderHome(): void {
   currentLesson = null;
   lessonTitle.textContent = 'STEM Visualizer';
   interactiveTitle.textContent = 'Interactive explorer';
+  interactiveSubtitle.textContent = DEFAULT_HINT;
 
   const cards = explainers
     .map(
       (explainer) => `
         <button class="library-card" type="button" data-lesson-id="${explainer.id}">
-          <img class="library-card-poster" src="${explainer.poster}" alt="" loading="lazy">
+          <img class="library-card-poster" src="${explainer.poster}" alt="" decoding="async">
           <span class="library-card-title">${escapeHtml(explainer.title)}</span>
           <span class="library-card-blurb">${escapeHtml(explainer.blurb)}</span>
         </button>`,
@@ -180,6 +181,7 @@ function setLessonMeta(lesson: Explainer): void {
   currentLesson = lesson;
   lessonTitle.textContent = lesson.title;
   interactiveTitle.textContent = `${lesson.title} explorer`;
+  interactiveSubtitle.textContent = lesson.hint ?? DEFAULT_HINT;
   // a different deck means the iframe must reload next time interactive opens
   if (loadedDeck !== lesson.deck) {
     loadedDeck = null;
