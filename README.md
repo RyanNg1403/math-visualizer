@@ -7,7 +7,8 @@ Manim-quality math explainers, built with plain web tech and rendered to video �
 | Path | What it is |
 |---|---|
 | `src/` + Vite files | **Math Visualizer** — Ivory Scholar chat and interactive STEM visualizer prototype, built as a Vite + TypeScript frontend. Run with `npm install` then `npm run dev`. |
-| `video-proto/the-derivative.mp4` | The same lesson as a 2.5-min 1080p60 video with an ambient music bed, rendered from the Motion Canvas port in `video-proto/motion-canvas/`. |
+| `derivative-deck.html` | **The Derivative** — standalone interactive slide deck (13 scenes). Open directly in a browser; step through with `→` (each press plays one animation beat, Manim-style), `←` back, `r` replay. Sliders and draggable points on several slides, plus a 3-scene **3D act** (curve→surface, tangent plane, gradient) you can **click-drag to orbit**. |
+| `video-proto/the-derivative.mp4` | The same lesson as a ~3.4-min 1080p60 video with an ambient music bed, rendered from the Motion Canvas port in `video-proto/motion-canvas/`. It builds from the 1-D tangent line all the way to the tangent plane and gradient descent in 3-D. |
 | `codex-test/` | A second, independently produced explainer (**Taylor series**: `taylor-deck.html` + `taylor.mp4`) — built by an agent following the skill, with its build report in `REPORT.md`. |
 | `.codex/skills/math-deck-video/` (mirrored at `.claude/skills/`) | **The skill**: a complete playbook for producing these — design taste, deck architecture, Motion Canvas port recipe, verified reference implementations to copy from, music/mux pipeline, and the phase-gate checklist. |
 

@@ -10,8 +10,11 @@ import s06 from './scenes/s06_function?scene';
 import s07 from './scenes/s07_reading?scene';
 import s08 from './scenes/s08_speedometer?scene';
 import s09 from './scenes/s09_descent?scene';
-import s10 from './scenes/s10_recap?scene';
+import s10 from './scenes/s10_surface?scene';
+import s11 from './scenes/s11_plane?scene';
+import s12 from './scenes/s12_gradient?scene';
+import s13 from './scenes/s13_recap?scene';
 
 export default makeProject({
-  scenes: [s01, s02, s03, s04, s05, s06, s07, s08, s09, s10],
+  scenes: [s01, s02, s03, s04, s05, s06, s07, s08, s09, s10, s11, s12, s13],
 });

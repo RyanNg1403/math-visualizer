@@ -1,0 +1,1488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Derivative — math-visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+  :root{
+    --bg:#0b0e15;
+    --panel:#121624;
+    --ink:#e9e7df;
+    --dim:#7d869c;
+    --faint:#3a4154;
+    --blue:#58c4dd;
+    --yellow:#ffd45e;
+    --green:#7fd483;
+    --red:#ff6f61;
+    --purple:#c792ea;
+    --white:#e9e7df;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1200px 700px at 50% 20%, #131829 0%, var(--bg) 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Karla',sans-serif;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  .grain{
+    position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  #deck{position:fixed;inset:0 0 56px 0}
+  .slide{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    padding:14px 40px 18px;
+    opacity:0;transform:translateY(16px);
+    transition:opacity .5s ease,transform .5s ease;
+  }
+  .slide.active{opacity:1;transform:translateY(0)}
+  .slide.exit{opacity:0;transform:translateY(-14px)}
+  .frame{width:min(1140px,95vw);display:flex;flex-direction:column;gap:10px}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+  .kicker{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.22em;
+    color:var(--dim);text-transform:uppercase;
+  }
+  h2{
+    font-family:'Fraunces',serif;font-weight:600;font-size:clamp(22px,3.2vw,33px);
+    letter-spacing:-.01em;
+  }
+  h2 em{color:var(--yellow);font-style:italic;font-weight:400}
+  .beats{display:flex;gap:5px;align-items:center}
+  .beats i{
+    width:7px;height:7px;background:var(--faint);
+    transform:rotate(45deg);transition:background .3s;
+  }
+  .beats i.done{background:var(--yellow)}
+  .stage{position:relative;width:100%}
+  .stage svg{display:block;width:100%;height:auto}
+  .overlay{position:absolute;inset:0;pointer-events:none}
+  .overlay .ui{pointer-events:auto}
+  .caption{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:400;
+    font-size:19.5px;line-height:1.4;color:#b9c0d2;min-height:34px;
+    text-align:center;align-self:center;max-width:64ch;transition:opacity .18s;
+  }
+  .caption.fading{opacity:0}
+  .caption b{color:var(--ink)}
+  .caption .y{color:var(--yellow)} .caption .bl{color:var(--blue)}
+  .caption .g{color:var(--green)} .caption .r{color:var(--red)}
+
+  /* ---- SVG vocabulary ---- */
+  .axisline{stroke:#5a6378;stroke-width:1.6}
+  .tick{font-family:'IBM Plex Mono',monospace;font-size:12.5px;fill:#69718a}
+  .axlab{font-family:'IBM Plex Mono',monospace;font-size:12px;fill:#8b93a7;letter-spacing:.08em}
+  .grid{stroke:#ffffff;stroke-opacity:.045;stroke-width:1}
+  .curve{fill:none;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round}
+  .thin{stroke-width:2.2}
+  .c-blue{stroke:var(--blue)} .c-yellow{stroke:var(--yellow)} .c-green{stroke:var(--green)}
+  .c-red{stroke:var(--red)} .c-purple{stroke:var(--purple)} .c-white{stroke:#d7d5cc}
+  .c-dim{stroke:#4d5569}
+  .dashed{stroke-dasharray:5 6;stroke-width:1.8;fill:none}
+  .f-blue{fill:var(--blue)} .f-yellow{fill:var(--yellow)} .f-green{fill:var(--green)}
+  .f-red{fill:var(--red)} .f-purple{fill:var(--purple)} .f-white{fill:#e9e7df}
+  .mathlab{font-family:KaTeX_Math,Georgia,serif;font-style:italic;font-size:16px}
+  .glyph{font-size:21px;font-family:'Karla',sans-serif}
+  .handle{cursor:grab}
+  .handle:active{cursor:grabbing}
+  .halo{fill:none;stroke-width:2;opacity:0}
+  @keyframes pulse{
+    0%{transform:scale(1);opacity:.8} 70%{transform:scale(2.4);opacity:0} 100%{transform:scale(2.4);opacity:0}
+  }
+  .pulsing{transform-box:fill-box;transform-origin:center;animation:pulse 1.7s ease-out infinite}
+
+  /* ---- overlay widgets ---- */
+  .pill{
+    position:absolute;font-family:'IBM Plex Mono',monospace;font-size:13.5px;
+    color:var(--ink);background:#171c2cdd;border:1px solid #2a3147;
+    border-radius:7px;padding:7px 12px;white-space:nowrap;
+  }
+  .pill .lab{color:var(--dim)}
+  .pill .y{color:var(--yellow)} .pill .bl{color:var(--blue)}
+  .pill .g{color:var(--green)} .pill .r{color:var(--red)}
+  .bigread{font-size:21px;font-weight:500}
+  .eq{position:absolute;color:var(--ink)}
+  .eq .katex{font-size:1.35em}
+  .eq.big .katex{font-size:1.7em}
+  .fade0{opacity:0;transition:opacity .7s ease,transform .7s ease;transform:translateY(8px)}
+  .fade0.in{opacity:1;transform:none}
+  .ctrl{
+    position:absolute;display:flex;gap:14px;align-items:center;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--dim);
+    background:#171c2cdd;border:1px solid #2a3147;border-radius:9px;padding:9px 14px;
+  }
+  .ctrl input[type=range]{accent-color:var(--yellow);width:170px;cursor:pointer}
+  .ctrl .val{color:var(--yellow);min-width:74px}
+  .ctrl button{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.06em;
+    background:var(--yellow);color:#14171f;border:0;border-radius:6px;
+    padding:6px 14px;cursor:pointer;font-weight:500;
+  }
+  .ctrl button:disabled{opacity:.45;cursor:default}
+  .badge{
+    position:absolute;font-family:'IBM Plex Mono',monospace;font-size:13px;
+    padding:5px 12px;border-radius:6px;letter-spacing:.05em;
+  }
+  .badge.ok{background:#1d3324;color:var(--green);border:1px solid #2c5237}
+  .badge.bad{background:#3a1f1d;color:var(--red);border:1px solid #5e2f2b}
+
+  /* ---- title slide ---- */
+  .titlebox{position:absolute;left:0;right:0;top:8%;text-align:center;pointer-events:none}
+  .titlebox .over{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.3em;color:var(--dim);text-transform:uppercase}
+  .titlebox h1{
+    font-family:'Fraunces',serif;font-weight:300;font-size:clamp(44px,7vw,84px);
+    letter-spacing:-.02em;margin-top:10px;
+  }
+  .titlebox h1 em{font-style:italic;font-weight:600;color:var(--yellow)}
+  .titlebox .sub{margin-top:12px;color:#aab1c4;font-size:17px}
+
+  /* ---- recap cards ---- */
+  .cards{position:absolute;inset:18px 0 0 0;display:flex;gap:16px;justify-content:center;align-items:stretch}
+  .card{
+    width:258px;background:#131829cc;border:1px solid #272e44;border-radius:14px;
+    padding:20px 20px 16px;display:flex;flex-direction:column;gap:9px;
+  }
+  .card h3{font-family:'Fraunces',serif;font-weight:600;font-size:21px}
+  .card h3 span{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.18em;display:block;margin-bottom:6px}
+  .card p{font-size:14px;line-height:1.5;color:#aab1c4}
+  .card svg{width:100%;height:80px}
+  .card.c1 h3 span{color:var(--blue)} .card.c2 h3 span{color:var(--green)} .card.c3 h3 span{color:var(--red)} .card.c4 h3 span{color:var(--yellow)}
+
+  /* ---- HUD ---- */
+  .hud{
+    position:fixed;left:0;right:0;bottom:0;height:56px;z-index:40;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 26px;border-top:1px solid #1d2335;
+    background:linear-gradient(#0b0e1500,#0b0e15ee 40%);
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--dim);
+  }
+  .hud-c{display:flex;align-items:center;gap:16px}
+  .hud button{
+    background:none;border:1px solid #2a3147;color:var(--ink);width:30px;height:30px;
+    border-radius:7px;cursor:pointer;font-size:14px;line-height:1;
+  }
+  .hud button:hover{border-color:var(--yellow);color:var(--yellow)}
+  .dots{display:flex;gap:7px}
+  .dots i{width:6px;height:6px;border-radius:50%;background:var(--faint);transition:all .3s}
+  .dots i.cur{background:var(--yellow);transform:scale(1.35)}
+  .dots i.seen{background:#6b6347}
+  kbd{
+    border:1px solid #2a3147;border-radius:4px;padding:1px 5px;font-size:10.5px;
+    font-family:inherit;color:#9aa2b6;margin-left:4px;
+  }
+  .hud .tag{letter-spacing:.1em}
+</style>
+</head>
+<body>
+<div id="deck"></div>
+<div class="hud">
+  <div class="tag">html · svg · katex — manim, but alive</div>
+  <div class="hud-c">
+    <button id="bPrev" aria-label="previous">←</button>
+    <div class="dots" id="dots"></div>
+    <button id="bNext" aria-label="next">→</button>
+  </div>
+  <div><span id="counter">01 / 13</span><kbd>←</kbd><kbd>→</kbd><kbd>r</kbd></div>
+</div>
+<div class="grain"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script>
+'use strict';
+/* ================= tiny animation engine ================= */
+const EASE = {
+  linear: t => t,
+  inOutCubic: t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
+  outCubic: t => 1 - Math.pow(1-t,3),
+  outQuint: t => 1 - Math.pow(1-t,5),
+  inOutSine: t => -(Math.cos(Math.PI*t)-1)/2,
+};
+const activeTweens = new Set();
+function tween({dur=800, ease='inOutCubic', update=()=>{}}) {
+  return new Promise(res => {
+    const E = EASE[ease] || EASE.inOutCubic;
+    const tw = {};
+    let raf, start;
+    tw.finish = () => { cancelAnimationFrame(raf); activeTweens.delete(tw); update(1); res(); };
+    const frame = now => {
+      if (start === undefined) start = now;
+      const t = Math.min((now-start)/dur, 1);
+      update(E(t));
+      if (t < 1) raf = requestAnimationFrame(frame);
+      else { activeTweens.delete(tw); res(); }
+    };
+    activeTweens.add(tw);
+    raf = requestAnimationFrame(frame);
+  });
+}
+const flushTweens = () => [...activeTweens].forEach(t => t.finish());
+const wait = ms => tween({dur: ms, ease:'linear'});
+const lerp = (a,b,t) => a + (b-a)*t;
+const fmt = (n,d=1) => n.toFixed(d);
+
+/* ================= svg helpers ================= */
+const NS = 'http://www.w3.org/2000/svg';
+function el(name, attrs={}, parent=null) {
+  const n = document.createElementNS(NS, name);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function htm(parent, cls, css, inner='') {
+  const d = document.createElement('div');
+  d.className = cls;
+  Object.assign(d.style, css);
+  d.innerHTML = inner;
+  parent.appendChild(d);
+  return d;
+}
+function tex(elm, s, opts={}) {
+  try { katex.render(s, elm, Object.assign({throwOnError:false, strict:false}, opts)); }
+  catch(e) { elm.textContent = s; }
+}
+function drawOn(path, dur=1200, ease='inOutCubic') {
+  const L = path.getTotalLength();
+  path.style.strokeDasharray = L;
+  path.style.strokeDashoffset = L;
+  path.style.opacity = 1;
+  return tween({dur, ease, update: t => path.style.strokeDashoffset = L*(1-t)})
+    .then(() => { path.style.strokeDasharray = 'none'; });
+}
+function fadeIn(node, dur=600, dy=8) {
+  node.style.opacity = 0;
+  node.style.transition = 'none';
+  if (dy) node.style.transform = `translateY(${dy}px)`;
+  return tween({dur, ease:'outCubic', update: t => {
+    node.style.opacity = t;
+    if (dy) node.style.transform = t === 1 ? '' : `translateY(${dy*(1-t)}px)`;
+  }});
+}
+function fadeInHtml(node, dur=600) {
+  node.classList.add('fade0');
+  // force layout so the transition fires
+  void node.offsetWidth;
+  node.classList.add('in');
+  return wait(dur);
+}
+function svgPoint(svg, evt) {
+  const p = svg.createSVGPoint();
+  p.x = evt.clientX; p.y = evt.clientY;
+  return p.matrixTransform(svg.getScreenCTM().inverse());
+}
+function draggable(handle, svg, onMove) {
+  handle.classList.add('handle');
+  handle.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    const move = ev => onMove(svgPoint(svg, ev));
+    const up = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up);
+  });
+}
+
+/* graph factory: maps math coords -> svg coords, builds axes */
+let _gid = 0;
+function makeGraph(svg, o) {
+  const id = ++_gid;
+  const g = el('g', {}, svg);
+  const X = u => o.left + (u - o.x[0]) / (o.x[1]-o.x[0]) * o.w;
+  const Y = v => o.top + o.h - (v - o.y[0]) / (o.y[1]-o.y[0]) * o.h;
+  const ax = el('g', {opacity:0}, g);
+  const layer = el('g', {}, g);
+  const x0 = Math.min(Math.max(0, o.x[0]), o.x[1]);   // axis anchor
+  const y0 = Math.min(Math.max(0, o.y[0]), o.y[1]);
+  // grid
+  (o.xticks||[]).forEach(u => el('line', {x1:X(u), y1:Y(o.y[0]), x2:X(u), y2:Y(o.y[1]), class:'grid'}, ax));
+  (o.yticks||[]).forEach(v => el('line', {x1:X(o.x[0]), y1:Y(v), x2:X(o.x[1]), y2:Y(v), class:'grid'}, ax));
+  // axes
+  el('line', {x1:X(o.x[0])-4, y1:Y(y0), x2:X(o.x[1])+10, y2:Y(y0), class:'axisline'}, ax);
+  el('line', {x1:X(x0), y1:Y(o.y[0])+4, x2:X(x0), y2:Y(o.y[1])-10, class:'axisline'}, ax);
+  el('path', {d:`M ${X(o.x[1])+16} ${Y(y0)} l -9 -4.2 l 0 8.4 z`, fill:'#5a6378'}, ax);
+  el('path', {d:`M ${X(x0)} ${Y(o.y[1])-16} l -4.2 9 l 8.4 0 z`, fill:'#5a6378'}, ax);
+  // ticks
+  (o.xticks||[]).forEach(u => {
+    el('line', {x1:X(u), y1:Y(y0)-4, x2:X(u), y2:Y(y0)+4, class:'axisline'}, ax);
+    const t = el('text', {x:X(u), y:Y(y0)+20, class:'tick','text-anchor':'middle'}, ax);
+    t.textContent = u;
+  });
+  (o.yticks||[]).forEach(v => {
+    if (v === 0 && (o.xticks||[]).includes(0)) return;
+    el('line', {x1:X(x0)-4, y1:Y(v), x2:X(x0)+4, y2:Y(v), class:'axisline'}, ax);
+    const t = el('text', {x:X(x0)-10, y:Y(v)+4, class:'tick','text-anchor':'end'}, ax);
+    t.textContent = v;
+  });
+  if (o.xlab) {
+    const t = el('text', {x:X(o.x[1])+14, y:Y(y0)+34, class:'axlab','text-anchor':'end'}, ax);
+    t.textContent = o.xlab;
+  }
+  if (o.ylab) {
+    const t = el('text', {x:X(x0)+10, y:Y(o.y[1])-14, class:'axlab'}, ax);
+    t.textContent = o.ylab;
+  }
+  return {
+    id, g, layer, X, Y,
+    show: (dur=600) => tween({dur, update: t => ax.setAttribute('opacity', t)}),
+    pathD(f, a, b, n=200) {
+      let d = '';
+      for (let i = 0; i <= n; i++) {
+        const u = a + (b-a)*i/n;
+        d += (i ? 'L' : 'M') + X(u).toFixed(2) + ' ' + Y(f(u)).toFixed(2);
+      }
+      return d;
+    },
+    fn(f, a, b, cls, n=200) {
+      return el('path', {d:this.pathD(f,a,b,n), class:'curve '+cls, fill:'none', opacity:0}, layer);
+    },
+    dot(u, v, r, cls) { return el('circle', {cx:X(u), cy:Y(v), r, class:cls}, layer); },
+  };
+}
+
+/* ================= the math ================= */
+// the car: position s(t) over 8 seconds (smoothstep — accelerates then brakes)
+const CAR = {
+  T: 8, S: 120,
+  s: t => { const u = Math.min(Math.max(t/8,0),1); return 120*u*u*(3-2*u); },
+  v: t => { const u = Math.min(Math.max(t/8,0),1); return 90*u*(1-u); },
+};
+// the curvy star of slides 6-7
+const F  = x => x*x*x/3 - x;
+const Fp = x => x*x - 1;
+// slide 5's generic function
+const G5  = x => 0.12*x*x + 0.6;
+// slide 9's loss
+const L  = x => 0.08*Math.pow(x,4) + 0.2*x*x + 0.6;
+const Lp = x => 0.32*Math.pow(x,3) + 0.4*x;
+
+/* line through (a,fa) with slope m, clipped to x range [u0,u1] and optionally y range */
+function slopeLineD(G, a, fa, m, u0, u1, ymin, ymax) {
+  if (ymin !== undefined && Math.abs(m) > 1e-9) {
+    const ys = u => fa + m*(u-a);
+    const uAt = y => a + (y - fa)/m;
+    if (ys(u0) < ymin) u0 = uAt(ymin); else if (ys(u0) > ymax) u0 = uAt(ymax);
+    if (ys(u1) < ymin) u1 = uAt(ymin); else if (ys(u1) > ymax) u1 = uAt(ymax);
+  }
+  return `M ${G.X(u0)} ${G.Y(fa + m*(u0-a))} L ${G.X(u1)} ${G.Y(fa + m*(u1-a))}`;
+}
+
+/* ================= 3D projection engine (portable to Motion Canvas) =================
+   Everything tweakable lives in CFG3. The surface is a tilted Gaussian "hill":
+       z = f(x,y) = amp·e^(-spread·(x²+y²)) + tilt·x
+   Partial derivatives are analytic (F3x, F3y), so the tangent plane and gradient
+   are exact, not finite-differenced. proj3 is a plain yaw/pitch orthographic camera
+   with an optional weak perspective — the identical math is reused in the video port. */
+const CFG3 = {
+  // --- surface shape ---
+  amp: 2.4, spread: 0.25, tilt: 0.12,
+  // --- domain & mesh density ---
+  dom: 3.2, grid: 18,
+  // --- the point where partials / tangent plane / gradient are built ---
+  x0: 1.15, y0: -0.95,
+  // --- camera: yaw θ, pitch φ, world→px scale, weak perspective, vertical exaggeration ---
+  theta: 0.92, phi: 0.52, scale: 62, persp: 0, zlift: 1.0, cx: 480,
+  // --- look: directional light + height color ramp (low → high) ---
+  light: [-0.35, -0.42, 0.84], lo: '#163a5b', hi: '#7fe0ef',
+};
+const F3  = (x,y) => CFG3.amp*Math.exp(-CFG3.spread*(x*x+y*y)) + CFG3.tilt*x;
+const F3x = (x,y) => CFG3.amp*Math.exp(-CFG3.spread*(x*x+y*y))*(-2*CFG3.spread*x) + CFG3.tilt;
+const F3y = (x,y) => CFG3.amp*Math.exp(-CFG3.spread*(x*x+y*y))*(-2*CFG3.spread*y);
+
+const cam3 = over => Object.assign({
+  theta:CFG3.theta, phi:CFG3.phi, scale:CFG3.scale, persp:CFG3.persp, zlift:CFG3.zlift,
+  cx:CFG3.cx, cy:292,
+}, over||{});
+
+/* world (x east, y north, z up) → screen {x,y} + view depth (larger = nearer the camera) */
+function proj3(x, y, z, cam) {
+  const ct=Math.cos(cam.theta), st=Math.sin(cam.theta);
+  const xr = x*ct - y*st, yr = x*st + y*ct;
+  const cf=Math.cos(cam.phi), sf=Math.sin(cam.phi);
+  const zv = z*cam.zlift;
+  const up = zv*cf - yr*sf;
+  const depth = yr*cf + zv*sf;
+  const k = cam.persp ? 1/(1 + cam.persp*(3 - depth)) : 1;
+  return { x: cam.cx + xr*cam.scale*k, y: cam.cy - up*cam.scale*k, depth };
+}
+const poly3 = (pts, cam) => pts.map((p,i) => {
+  const q = proj3(p[0],p[1],p[2],cam);
+  return (i?'L':'M') + q.x.toFixed(1) + ' ' + q.y.toFixed(1);
+}).join(' ');
+const setLine = (ln,a,b) => { ln.setAttribute('x1',a.x); ln.setAttribute('y1',a.y); ln.setAttribute('x2',b.x); ln.setAttribute('y2',b.y); };
+/* screen-space arrowhead triangle at b, pointing along a→b */
+function headD(a, b, size=10) {
+  const ang = Math.atan2(b.y-a.y, b.x-a.x), w = size*0.6;
+  const bx=b.x-size*Math.cos(ang), by=b.y-size*Math.sin(ang);
+  const px=Math.cos(ang+Math.PI/2)*w, py=Math.sin(ang+Math.PI/2)*w;
+  return `M ${b.x.toFixed(1)} ${b.y.toFixed(1)} L ${(bx+px).toFixed(1)} ${(by+py).toFixed(1)} L ${(bx-px).toFixed(1)} ${(by-py).toFixed(1)} Z`;
+}
+/* color helpers */
+const hx2rgb = h => [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const rgb2hx = r => '#'+r.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+const mix = (a,b,t) => { const A=hx2rgb(a),B=hx2rgb(b); return rgb2hx([0,1,2].map(i=>lerp(A[i],B[i],t))); };
+
+/* depth-sorted, shaded surface mesh built from filled+stroked quads (stroke = wireframe) */
+function makeSurface(parent, cam, getRise) {
+  const N = CFG3.grid, D = CFG3.dom;
+  const xs = i => -D + 2*D*i/N, ys = j => -D + 2*D*j/N;
+  const g = el('g', {}, parent);
+  const cells = [];
+  for (let i=0;i<N;i++) for (let j=0;j<N;j++)
+    cells.push({i,j, path: el('path', {'stroke-width':0.7,'stroke-linejoin':'round'}, g)});
+  const maxZ = CFG3.amp + CFG3.tilt*D + 1e-3;
+  const L = CFG3.light, Ln = Math.hypot(L[0],L[1],L[2]);
+  function update() {
+    const r = getRise ? getRise() : 1;
+    const f = (x,y) => F3(x,y)*r;
+    for (const c of cells) {
+      const x0=xs(c.i),x1=xs(c.i+1),y0=ys(c.j),y1=ys(c.j+1);
+      const z00=f(x0,y0),z10=f(x1,y0),z11=f(x1,y1),z01=f(x0,y1);
+      const A=proj3(x0,y0,z00,cam), B=proj3(x1,y0,z10,cam), C=proj3(x1,y1,z11,cam), E=proj3(x0,y1,z01,cam);
+      c.depth = (A.depth+B.depth+C.depth+E.depth)/4;
+      c.d = `M ${A.x.toFixed(1)} ${A.y.toFixed(1)} L ${B.x.toFixed(1)} ${B.y.toFixed(1)} L ${C.x.toFixed(1)} ${C.y.toFixed(1)} L ${E.x.toFixed(1)} ${E.y.toFixed(1)} Z`;
+      // world-space normal for Lambert shading
+      const ux=x1-x0, uz=z10-z00, vy=y1-y0, vz=z01-z00;
+      const nx=-uz*vy, ny=-ux*vz, nz=ux*vy, nn=Math.hypot(nx,ny,nz)||1;
+      let sh = (nx*L[0]+ny*L[1]+nz*L[2])/(nn*Ln);
+      sh = 0.55 + 0.45*Math.max(0, sh);
+      const zc=(z00+z10+z11+z01)/4;
+      const base = mix(CFG3.lo, CFG3.hi, Math.max(0,Math.min(1, (zc/r||0)/maxZ)));
+      c.fill = rgb2hx(hx2rgb(base).map(v=>v*sh));
+    }
+    cells.sort((p,q)=>p.depth-q.depth);          // painter's order: far first
+    for (const c of cells) {
+      c.path.setAttribute('d', c.d);
+      c.path.setAttribute('fill', c.fill);
+      c.path.setAttribute('stroke', mix(c.fill,'#0a1622',0.5));
+      g.appendChild(c.path);
+    }
+  }
+  return {g, update};
+}
+
+/* shared 3D stage: surface + axes + the marked point (with drop line to the ground) */
+function build3DStage(c, o={}) {
+  c.refs._rise  = o.rise===undefined ? 1 : o.rise;
+  c.refs._extra = [];
+  const cam = cam3(Object.assign({cy:o.cy||292}, o.cam||{}));
+  c.refs.cam = cam;
+  const surf = makeSurface(c.svg, cam, () => c.refs._rise);
+  const D = CFG3.dom, axg = el('g', {}, c.svg);
+  const AX = [{v:[D+0.6,0,0],l:'x'},{v:[0,D+0.6,0],l:'y'},{v:[0,0,CFG3.amp+0.7],l:'z'}].map(a => ({
+    v:a.v, l:a.l,
+    ln: el('line', {stroke:'#5a6378','stroke-width':1.5, opacity:.6}, axg),
+    tx: Object.assign(el('text', {class:'axlab', fill:'#8b93a7','text-anchor':'middle'}, axg), {textContent:a.l}),
+  }));
+  const ptDrop   = el('line',   {class:'dashed', stroke:'var(--yellow)', opacity:0}, c.svg);
+  const ptGround = el('circle', {r:4, fill:'var(--yellow)', opacity:0}, c.svg);
+  const ptDot    = el('circle', {r:6.5, class:'f-yellow', opacity:0}, c.svg);
+  Object.assign(c.refs, {surf, ptDot, ptDrop, ptGround, axels:AX});
+  c.refs.px = o.px===undefined ? CFG3.x0 : o.px;
+  c.refs.py = o.py===undefined ? CFG3.y0 : o.py;
+  c.refs.showPt = o.showPt!==false;
+  function redraw() {
+    surf.update();
+    const o0 = proj3(0,0,0,cam);
+    for (const a of AX) {
+      const e = proj3(a.v[0],a.v[1],a.v[2],cam);
+      setLine(a.ln,o0,e);
+      a.tx.setAttribute('x', e.x + (a.l==='x'?9:0));
+      a.tx.setAttribute('y', e.y + (a.l==='z'?-6:16));
+    }
+    const px=c.refs.px, py=c.refs.py, pz=F3(px,py)*c.refs._rise;
+    const pd=proj3(px,py,pz,cam), pg=proj3(px,py,0,cam);
+    const v = c.refs.showPt ? 1 : 0;
+    setLine(ptDrop,pg,pd); ptDrop.setAttribute('opacity', v?0.7:0);
+    ptGround.setAttribute('cx',pg.x); ptGround.setAttribute('cy',pg.y); ptGround.setAttribute('opacity', v?0.6:0);
+    ptDot.setAttribute('cx',pd.x); ptDot.setAttribute('cy',pd.y); ptDot.setAttribute('opacity', v);
+    for (const f of c.refs._extra) f();
+  }
+  c.refs.redraw = redraw;
+  return c.refs;
+}
+
+/* live knobs for the 3D slides */
+function rotControl(c, cam, redraw) {
+  const ctrl = htm(c.ov, 'ctrl ui', {left:'50%', bottom:'3%', transform:'translateX(-50%)', opacity:0},
+    `<span>yaw</span><input class="k-yaw" type="range" min="-3.14" max="3.14" step="0.01" value="${cam.theta}">
+     <span>pitch</span><input class="k-pit" type="range" min="0.12" max="1.25" step="0.01" value="${cam.phi}">`);
+  ctrl.querySelector('.k-yaw').addEventListener('input', e => { cam.theta=+e.target.value; redraw(); });
+  ctrl.querySelector('.k-pit').addEventListener('input', e => { cam.phi=+e.target.value; redraw(); });
+  return ctrl;
+}
+function pointControl(c, redraw) {
+  const lo = (-CFG3.dom+0.5).toFixed(2), hi = (CFG3.dom-0.5).toFixed(2);
+  const ctrl = htm(c.ov, 'ctrl ui', {left:'50%', bottom:'3%', transform:'translateX(-50%)', opacity:0},
+    `<span>x₀</span><input class="k-x" type="range" min="${lo}" max="${hi}" step="0.05" value="${c.refs.px}"><span class="val k-xv"></span>
+     <span>y₀</span><input class="k-y" type="range" min="${lo}" max="${hi}" step="0.05" value="${c.refs.py}"><span class="val k-yv"></span>`);
+  const sync = () => {
+    ctrl.querySelector('.k-xv').textContent = `x₀=${fmt(c.refs.px,2)}`;
+    ctrl.querySelector('.k-yv').textContent = `y₀=${fmt(c.refs.py,2)}`;
+  };
+  ctrl.querySelector('.k-x').addEventListener('input', e => { c.refs.px=+e.target.value; sync(); redraw(); });
+  ctrl.querySelector('.k-y').addEventListener('input', e => { c.refs.py=+e.target.value; sync(); redraw(); });
+  sync();
+  return ctrl;
+}
+
+/* drag anywhere on the 3D plot to orbit the camera (the headline 3D interaction) */
+function orbitControl(c, cam, redraw) {
+  const svg = c.svg;
+  svg.style.cursor = 'grab';
+  svg.style.touchAction = 'none';
+  let active = false, sx = 0, sy = 0, th0 = 0, ph0 = 0;
+  svg.addEventListener('pointerdown', e => {
+    if (e.target.closest('input,button,.ui,.handle')) return;
+    active = true; sx = e.clientX; sy = e.clientY; th0 = cam.theta; ph0 = cam.phi;
+    try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+    svg.style.cursor = 'grabbing';
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!active) return;
+    cam.theta = th0 - (e.clientX - sx) * 0.009;
+    cam.phi = Math.min(1.35, Math.max(0.12, ph0 - (e.clientY - sy) * 0.006));
+    redraw();
+  });
+  const end = () => { active = false; svg.style.cursor = 'grab'; };
+  svg.addEventListener('pointerup', end);
+  svg.addEventListener('pointercancel', end);
+  svg.addEventListener('pointerleave', end);
+}
+
+/* ================= slides ================= */
+const slides = [
+
+/* ---------- 1 · TITLE ---------- */
+{
+  kicker: 'math visualizer · experiment 01',
+  title: '',
+  vh: 430,
+  caption: '',
+  setup(c) {
+    htm(c.ov, 'titlebox', {}, `
+      <div class="over">a visual introduction · no calculus required</div>
+      <h1>The <em>Derivative</em></h1>
+      <div class="sub">from a single slope to the gradient — slopes, speed, and surfaces in 3D</div>`);
+    const G = makeGraph(c.svg, {x:[-0.4,9], y:[-0.6,3.4], left:170, top:170, w:620, h:230});
+    c.refs = {G, curve: G.fn(x => 1.4 + 1.1*Math.sin(x*0.9 - 1) , 0, 8.6, 'c-blue')};
+    c.refs.tan = el('path', {class:'curve c-yellow thin', fill:'none', opacity:0}, G.layer);
+    c.refs.pt = el('circle', {r:6, class:'f-yellow', opacity:0}, G.layer);
+  },
+  beats: [async c => {
+    const {G, curve, tan, pt} = c.refs;
+    const f = x => 1.4 + 1.1*Math.sin(x*0.9 - 1);
+    const fp = x => 1.1*0.9*Math.cos(x*0.9 - 1);
+    await drawOn(curve, 1800);
+    pt.setAttribute('opacity', 1);
+    tan.setAttribute('opacity', 1);
+    await tween({dur:2800, ease:'inOutSine', update: t => {
+      const x = lerp(0.7, 7.9, t), y = f(x), m = fp(x);
+      pt.setAttribute('cx', G.X(x)); pt.setAttribute('cy', G.Y(y));
+      const dx = 1.1;
+      tan.setAttribute('d', `M ${G.X(x-dx)} ${G.Y(y-m*dx)} L ${G.X(x+dx)} ${G.Y(y+m*dx)}`);
+    }});
+    c.say(`Press <b>→</b> — each press plays the next scene.`);
+  }],
+},
+
+/* ---------- 2 · THE QUESTION ---------- */
+{
+  kicker: '02 · the question calculus answers',
+  title: 'A car drives 120 meters in 8 seconds',
+  vh: 440,
+  caption: 'A car’s position, second by second.',
+  setup(c) {
+    const G = makeGraph(c.svg, {x:[0,8.7], y:[0,138], left:120, top:26, w:710, h:330,
+      xticks:[0,2,4,6,8], yticks:[40,80,120], xlab:'time (s)', ylab:'position (m)'});
+    c.refs = {G,
+      curve: G.fn(CAR.s, 0, 8, 'c-blue'),
+      dot: el('circle', {r:7, class:'f-yellow', opacity:0}, G.layer),
+      read: htm(c.ov, 'pill', {left:'17%', top:'8%', opacity:0}, ''),
+    };
+  },
+  beats: [
+    async c => {
+      const {G, curve, dot, read} = c.refs;
+      await G.show();
+      await drawOn(curve, 1500);
+      dot.setAttribute('opacity', 1); read.style.opacity = 1;
+      await tween({dur:3000, ease:'inOutSine', update: t => {
+        const tt = 8*t, s = CAR.s(tt);
+        dot.setAttribute('cx', G.X(tt)); dot.setAttribute('cy', G.Y(s));
+        read.innerHTML = `<span class="lab">t=</span>${fmt(tt)}s &nbsp;<span class="lab">position=</span><span class="bl">${fmt(s,0)} m</span>`;
+      }});
+      // the average: one straight chord, start to finish
+      const chord = el('path', {d:`M ${G.X(0)} ${G.Y(0)} L ${G.X(8)} ${G.Y(120)}`, class:'dashed c-green', opacity:0}, G.layer);
+      await drawOn(chord, 700);
+      const avg = el('text', {x:G.X(4.4), y:G.Y(60)+26, class:'mathlab f-green', 'text-anchor':'middle'}, G.layer);
+      avg.textContent = 'average: 15 m/s';
+      await fadeIn(avg, 400, 0);
+    },
+    async c => {
+      const {G} = c.refs;
+      const t3 = 3, s3 = CAR.s(3);
+      const vline = el('path', {d:`M ${G.X(t3)} ${G.Y(0)} L ${G.X(t3)} ${G.Y(s3)}`, class:'dashed c-yellow'}, G.layer);
+      await drawOn(vline, 600);
+      const p = el('circle', {cx:G.X(t3), cy:G.Y(s3), r:7, class:'f-yellow'}, G.layer);
+      el('circle', {cx:G.X(t3), cy:G.Y(s3), r:7, class:'halo c-yellow pulsing', opacity:1, stroke:'var(--yellow)'}, G.layer);
+      const q = htm(c.ov, 'eq big fade0', {left:'46%', top:'56%'}, '');
+      tex(q, String.raw`\text{speed at exactly } t=3\,?`);
+      await fadeInHtml(q);
+      c.say(`The average hides the moment. What happens at <b>exactly</b> <span class="y">t = 3</span>?`);
+    },
+  ],
+},
+
+/* ---------- 3 · AVERAGE RATE ---------- */
+{
+  kicker: '03 · average rate of change',
+  title: 'Pick two moments — the slope between them is the <em>average speed</em>',
+  vh: 440,
+  caption: 'Two moments make a <b>secant line</b>.',
+  setup(c) {
+    const G = makeGraph(c.svg, {x:[0,8.7], y:[0,138], left:120, top:26, w:710, h:330,
+      xticks:[0,2,4,6,8], yticks:[40,80,120], xlab:'time (s)', ylab:'position (m)'});
+    const curve = G.fn(CAR.s, 0, 8, 'c-blue');
+    const sec = el('path', {class:'curve c-green thin', fill:'none', opacity:0}, G.layer);
+    const run = el('path', {class:'dashed c-yellow', opacity:0}, G.layer);
+    const rise = el('path', {class:'dashed c-red', opacity:0}, G.layer);
+    const labDt = el('text', {class:'mathlab f-yellow', 'text-anchor':'middle', opacity:0}, G.layer);
+    labDt.textContent = 'Δt';
+    const labDs = el('text', {class:'mathlab f-red', opacity:0}, G.layer);
+    labDs.textContent = 'Δs';
+    const mk = name => {
+      const grp = el('g', {opacity:0}, G.layer);
+      el('circle', {r:16, fill:'transparent'}, grp);
+      el('circle', {r:7, class:'f-yellow'}, grp);
+      const t = el('text', {y:-14, class:'mathlab f-white', 'text-anchor':'middle'}, grp);
+      t.textContent = name;
+      return grp;
+    };
+    const A = mk('A'), B = mk('B');
+    const read = htm(c.ov, 'pill', {left:'16%', top:'7%', opacity:0}, '');
+    const eq = htm(c.ov, 'eq fade0', {right:'4%', top:'58%'}, '');
+    tex(eq, String.raw`\text{avg speed}=\frac{\Delta s}{\Delta t}=\frac{s(B)-s(A)}{B-A}`, {displayMode:true});
+    c.refs = {G, curve, sec, run, rise, labDt, labDs, A, B, read, eq, a:2, b:6};
+    c.update = () => {
+      const {a, b} = c.refs;
+      const sa = CAR.s(a), sb = CAR.s(b), m = (sb-sa)/(b-a);
+      A.setAttribute('transform', `translate(${G.X(a)},${G.Y(sa)})`);
+      B.setAttribute('transform', `translate(${G.X(b)},${G.Y(sb)})`);
+      sec.setAttribute('d', slopeLineD(G, a, sa, m, Math.max(0.2, a-1.3), Math.min(8.5, b+1.3), 2, 134));
+      run.setAttribute('d', `M ${G.X(a)} ${G.Y(sa)} L ${G.X(b)} ${G.Y(sa)}`);
+      rise.setAttribute('d', `M ${G.X(b)} ${G.Y(sa)} L ${G.X(b)} ${G.Y(sb)}`);
+      labDt.setAttribute('x', G.X((a+b)/2)); labDt.setAttribute('y', G.Y(sa)+24);
+      labDs.setAttribute('x', G.X(b)+12); labDs.setAttribute('y', G.Y((sa+sb)/2)+5);
+      read.innerHTML = `<span class="lab">Δs/Δt =</span> ${fmt(sb-sa,0)} m / ${fmt(b-a)} s = <span class="g bigread">${fmt(m)} m/s</span>`;
+    };
+  },
+  beats: [
+    async c => {
+      const {G, curve, sec, A, B} = c.refs;
+      G.show(400);
+      curve.style.opacity = 1;
+      c.update();
+      await Promise.all([fadeIn(A, 500, 0), fadeIn(B, 500, 0)]);
+      await drawOn(sec, 900);
+    },
+    async c => {
+      const {run, rise, labDt, labDs, read, eq} = c.refs;
+      await drawOn(run, 500); labDt.setAttribute('opacity',1);
+      await drawOn(rise, 500); labDs.setAttribute('opacity',1);
+      read.style.opacity = 1;
+      await fadeInHtml(eq);
+      c.say(`Its slope: <span class="r">Δs</span> over <span class="y">Δt</span> — the average speed.`);
+    },
+    async c => {
+      const {G, A, B} = c.refs;
+      el('circle', {r:7, class:'halo pulsing', stroke:'var(--yellow)'}, A);
+      el('circle', {r:7, class:'halo pulsing', stroke:'var(--yellow)'}, B);
+      draggable(A, c.svg, p => {
+        const a = Math.min(Math.max((p.x - G.X(0)) / (G.X(1)-G.X(0)), 0.2), c.refs.b - 0.5);
+        c.refs.a = a; c.update();
+      });
+      draggable(B, c.svg, p => {
+        const b = Math.min(Math.max((p.x - G.X(0)) / (G.X(1)-G.X(0)), c.refs.a + 0.5), 7.9);
+        c.refs.b = b; c.update();
+      });
+      c.say(`<b>Drag A and B.</b> Watch the line hug the curve as they meet.`);
+      await wait(200);
+    },
+  ],
+},
+
+/* ---------- 4 · SECANT -> TANGENT ---------- */
+{
+  kicker: '04 · the limit — from average to instant',
+  title: 'Slide the second point toward the first',
+  vh: 440,
+  caption: 'A is fixed at t = 3. Now shrink the gap h…',
+  setup(c) {
+    const G = makeGraph(c.svg, {x:[0,8.7], y:[0,138], left:120, top:26, w:710, h:330,
+      xticks:[0,2,4,6,8], yticks:[40,80,120], xlab:'time (s)', ylab:'position (m)'});
+    const curve = G.fn(CAR.s, 0, 8, 'c-blue');
+    const sec = el('path', {class:'curve c-green thin', fill:'none', opacity:0}, G.layer);
+    const A = el('circle', {r:7, class:'f-yellow', opacity:0}, G.layer);
+    const B = el('circle', {r:6, class:'f-green', opacity:0}, G.layer);
+    const read = htm(c.ov, 'pill', {left:'16%', top:'7%', opacity:0}, '');
+    const eq = htm(c.ov, 'eq fade0', {right:'4%', top:'58%'}, '');
+    tex(eq, String.raw`\text{slope}=\frac{s(3+h)-s(3)}{h}`, {displayMode:true});
+    const ctrl = htm(c.ov, 'ctrl ui', {left:'50%', bottom:'4%', transform:'translateX(-50%)', opacity:0},
+      `<span>h</span><input type="range" min="0.05" max="4" step="0.01" value="4"><span class="val"></span>`);
+    c.refs = {G, curve, sec, A, B, read, eq, ctrl, h:4, locked:true};
+    c.update = () => {
+      const h = c.refs.h, a = 3, sa = CAR.s(a), sb = CAR.s(a+h), m = (sb-sa)/h;
+      A.setAttribute('cx', G.X(a)); A.setAttribute('cy', G.Y(sa));
+      B.setAttribute('cx', G.X(a+h)); B.setAttribute('cy', G.Y(sb));
+      sec.setAttribute('d', slopeLineD(G, a, sa, m, 0.6, 6.8, 2, 134));
+      read.innerHTML = `<span class="lab">h =</span> ${fmt(h,2)} s &nbsp;&nbsp;<span class="lab">slope =</span> <span class="g bigread">${fmt(m,2)} m/s</span>`;
+      ctrl.querySelector('.val').textContent = `h=${fmt(h,2)}s`;
+      return m;
+    };
+  },
+  beats: [
+    async c => {
+      const {G, curve, sec, A, B, read, eq} = c.refs;
+      G.show(400);
+      curve.style.opacity = 1;
+      c.update();
+      A.setAttribute('opacity',1); B.setAttribute('opacity',1); read.style.opacity = 1;
+      await drawOn(sec, 800);
+      await fadeInHtml(eq);
+    },
+    async c => {
+      const {sec} = c.refs;
+      c.say(`The slope <b>settles</b> — the speed at this very instant.`);
+      await tween({dur:4200, ease:'outCubic', update: t => {
+        c.refs.h = lerp(4, 0.05, t);
+        c.update();
+      }});
+      sec.classList.remove('c-green'); sec.classList.add('c-yellow');
+      sec.style.strokeWidth = 3.4;
+      const tag = htm(c.ov, 'pill fade0', {left:'56%', top:'48%'},
+        `<span class="lab">limit:</span> <span class="y bigread">${fmt(CAR.v(3),1)} m/s</span> <span class="lab">— the true speed at t=3</span>`);
+      await fadeInHtml(tag);
+    },
+    async c => {
+      const {ctrl} = c.refs;
+      ctrl.style.opacity = 1;
+      ctrl.querySelector('input').addEventListener('input', e => {
+        c.refs.h = parseFloat(e.target.value);
+        c.update();
+      });
+      c.say(`Your turn — <b>drive h yourself</b>.`);
+      await wait(200);
+    },
+  ],
+},
+
+/* ---------- 5 · THE DEFINITION ---------- */
+{
+  kicker: '05 · the definition, decoded',
+  title: 'Every symbol is something you can point at',
+  vh: 440,
+  caption: 'The whole definition, read off the picture.',
+  setup(c) {
+    const G = makeGraph(c.svg, {x:[0,7.4], y:[0,4.6], left:90, top:26, w:470, h:330,
+      xticks:[], yticks:[]});
+    const curve = G.fn(G5, 0.2, 5.5, 'c-white');
+    const xa = 2, h0 = 2.5;
+    const A = el('circle', {r:7, class:'f-blue', opacity:0}, G.layer);
+    const B = el('circle', {r:7, class:'f-green', opacity:0}, G.layer);
+    const dashA = el('path', {class:'dashed c-blue', opacity:0}, G.layer);
+    const dashB = el('path', {class:'dashed c-green', opacity:0}, G.layer);
+    const brkt = el('path', {class:'curve c-yellow thin', fill:'none', opacity:0}, G.layer);
+    const sec = el('path', {class:'curve c-red thin', fill:'none', opacity:0}, G.layer);
+    const tA = el('text', {class:'mathlab f-blue', 'text-anchor':'middle', opacity:0}, G.layer); tA.textContent = 'f(x)';
+    const tB = el('text', {class:'mathlab f-green', 'text-anchor':'middle', opacity:0}, G.layer); tB.textContent = 'f(x+h)';
+    const tH = el('text', {class:'mathlab f-yellow', 'text-anchor':'middle', opacity:0}, G.layer); tH.textContent = 'h';
+    const eqHead = htm(c.ov, 'eq big fade0', {left:'61%', top:'34%'}, '');
+    tex(eqHead, String.raw`f'(x)\;=`);
+    const eqLim = htm(c.ov, 'eq big fade0', {left:'70.5%', top:'33%'}, '');
+    tex(eqLim, String.raw`\lim_{h\to 0}`);
+    const eqFrac = htm(c.ov, 'eq big fade0', {left:'78%', top:'28%'}, '');
+    tex(eqFrac, String.raw`\frac{\textcolor{#7fd483}{f(x+h)}-\textcolor{#58c4dd}{f(x)}}{\textcolor{#ffd45e}{h}}`, {displayMode:true});
+    c.refs = {G, curve, A, B, dashA, dashB, brkt, sec, tA, tB, tH, eqHead, eqLim, eqFrac, xa, h:h0};
+    c.update = () => {
+      const {xa, h} = c.refs;
+      const ya = G5(xa), yb = G5(xa+h), m = (yb-ya)/h;
+      A.setAttribute('cx', G.X(xa)); A.setAttribute('cy', G.Y(ya));
+      B.setAttribute('cx', G.X(xa+h)); B.setAttribute('cy', G.Y(yb));
+      dashA.setAttribute('d', `M ${G.X(xa)} ${G.Y(0)} L ${G.X(xa)} ${G.Y(ya)}`);
+      dashB.setAttribute('d', `M ${G.X(xa+h)} ${G.Y(0)} L ${G.X(xa+h)} ${G.Y(yb)}`);
+      const by = G.Y(0)+30;
+      brkt.setAttribute('d', `M ${G.X(xa)} ${by-6} L ${G.X(xa)} ${by} L ${G.X(xa+h)} ${by} L ${G.X(xa+h)} ${by-6}`);
+      sec.setAttribute('d', slopeLineD(G, xa, ya, m, Math.max(0.3,xa-1.4), Math.min(5.4,xa+h+1.6), 0.15, 4.45));
+      tA.setAttribute('x', G.X(xa)-4); tA.setAttribute('y', G.Y(ya)-16);
+      tB.setAttribute('x', G.X(xa+h)+6); tB.setAttribute('y', G.Y(yb)-16);
+      tH.setAttribute('x', G.X(xa+h/2)); tH.setAttribute('y', by+22);
+      // fade the f(x+h) label out as the two points merge, so the labels don't collide
+      if (c.refs.labelBOn) tB.setAttribute('opacity', Math.max(0, Math.min(1, (h - 0.35) / 0.8)));
+    };
+  },
+  beats: [
+    async c => {
+      const {G, curve, A, dashA, tA, eqHead} = c.refs;
+      G.show(400);
+      c.update();
+      await drawOn(curve, 1100);
+      await drawOn(dashA, 400);
+      A.setAttribute('opacity',1); tA.setAttribute('opacity',1);
+      await fadeInHtml(eqHead);
+      c.say(`<span class="bl">f(x)</span> — the height at x.`);
+    },
+    async c => {
+      const {B, dashB, brkt, tB, tH} = c.refs;
+      await drawOn(dashB, 400);
+      B.setAttribute('opacity',1); tB.setAttribute('opacity',1);
+      c.refs.labelBOn = true;
+      await drawOn(brkt, 500);
+      tH.setAttribute('opacity',1);
+      c.say(`A step <span class="y">h</span> to the right: height <span class="g">f(x+h)</span>.`);
+    },
+    async c => {
+      const {sec, eqFrac} = c.refs;
+      await drawOn(sec, 700);
+      await fadeInHtml(eqFrac);
+      c.say(`The fraction: <span class="g">rise</span> over <span class="y">run</span> — the <span class="r">secant’s</span> slope.`);
+    },
+    async c => {
+      const {eqLim} = c.refs;
+      fadeInHtml(eqLim);
+      c.say(`<b>lim h→0</b> — and the secant becomes the <b>tangent</b>.`);
+      await tween({dur:3000, ease:'inOutSine', update: t => {
+        c.refs.h = lerp(2.5, 0.18, t);
+        c.update();
+      }});
+    },
+  ],
+},
+
+/* ---------- 6 · DERIVATIVE AS A FUNCTION ---------- */
+{
+  kicker: '06 · the derivative is itself a function',
+  title: 'Measure the slope <em>everywhere</em>, and a new curve appears',
+  vh: 470,
+  caption: 'Collect the slope at every point…',
+  setup(c) {
+    const G1 = makeGraph(c.svg, {x:[-2.4,2.4], y:[-2,2], left:170, top:14, w:620, h:192,
+      xticks:[-2,-1,1,2], yticks:[-1,1]});
+    const G2 = makeGraph(c.svg, {x:[-2.4,2.4], y:[-1.6,4.2], left:170, top:256, w:620, h:196,
+      xticks:[-2,-1,1,2], yticks:[2,4]});
+    const curve1 = G1.fn(F, -2.25, 2.25, 'c-blue');
+    const tan = el('path', {class:'curve c-yellow thin', fill:'none', opacity:0}, G1.layer);
+    const p1 = el('circle', {r:6, class:'f-yellow', opacity:0}, G1.layer);
+    const trail = el('polyline', {fill:'none', class:'curve c-purple', opacity:0, points:''}, G2.layer);
+    const p2 = el('circle', {r:6, class:'f-purple', opacity:0}, G2.layer);
+    const lab1 = htm(c.ov, 'eq fade0', {left:'5%', top:'6%'}, '');
+    tex(lab1, String.raw`f(x)=\tfrac{x^3}{3}-x`);
+    const lab2 = htm(c.ov, 'eq fade0', {left:'5%', top:'58%'}, '');
+    tex(lab2, String.raw`f'(x)`);
+    const lab2b = htm(c.ov, 'eq fade0', {left:'5%', top:'68%'}, '');
+    tex(lab2b, String.raw`=x^2-1`);
+    const read = htm(c.ov, 'pill', {right:'4%', top:'6%', opacity:0}, '');
+    const ctrl = htm(c.ov, 'ctrl ui', {right:'4%', bottom:'2%', opacity:0},
+      `<span>x</span><input type="range" min="-2.1" max="2.1" step="0.01" value="2.1"><span class="val"></span>`);
+    const link = el('path', {class:'dashed c-dim', opacity:0}, c.svg);
+    c.refs = {G1, G2, curve1, tan, p1, trail, p2, lab1, lab2, lab2b, read, ctrl, link, pts:[]};
+    c.at = x => {
+      const y = F(x), m = Fp(x);
+      const dx = Math.min(0.55, 1.0 / Math.max(1, Math.abs(m))); // keep steep tangents inside the graph
+      p1.setAttribute('cx', G1.X(x)); p1.setAttribute('cy', G1.Y(y));
+      tan.setAttribute('d', `M ${G1.X(x-dx)} ${G1.Y(y-m*dx)} L ${G1.X(x+dx)} ${G1.Y(y+m*dx)}`);
+      p2.setAttribute('cx', G2.X(x)); p2.setAttribute('cy', G2.Y(m));
+      link.setAttribute('d', `M ${G1.X(x)} ${G1.Y(y)} L ${G2.X(x)} ${G2.Y(m)}`);
+      read.innerHTML = `<span class="lab">slope =</span> <span class="y bigread">${fmt(m,2)}</span>`;
+      ctrl.querySelector('.val').textContent = `x=${fmt(x,2)}`;
+    };
+  },
+  beats: [
+    async c => {
+      const {G1, G2, curve1, lab1, lab2} = c.refs;
+      G1.show(500); G2.show(500);
+      fadeInHtml(lab1); fadeInHtml(lab2);
+      await drawOn(curve1, 1400);
+      c.say(`…by sliding a tangent across the whole curve.`);
+    },
+    async c => {
+      const {tan, p1, p2, trail, read, link, pts} = c.refs;
+      [tan, p1, p2, trail, link].forEach(n => n.setAttribute('opacity', 1));
+      read.style.opacity = 1;
+      await tween({dur:6000, ease:'inOutSine', update: t => {
+        const x = lerp(-2.1, 2.1, t);
+        c.at(x);
+        pts.push(`${c.refs.G2.X(x).toFixed(1)},${c.refs.G2.Y(Fp(x)).toFixed(1)}`);
+        trail.setAttribute('points', pts.join(' '));
+      }});
+      // solidify the trace into the complete f' curve (robust even if the sweep was skipped)
+      const full = [];
+      for (let i = 0; i <= 200; i++) {
+        const x = lerp(-2.1, 2.1, i/200);
+        full.push(`${c.refs.G2.X(x).toFixed(1)},${c.refs.G2.Y(Fp(x)).toFixed(1)}`);
+      }
+      trail.setAttribute('points', full.join(' '));
+      await fadeInHtml(c.refs.lab2b);
+      c.say(`The slopes trace a <span style="color:var(--purple)">new function</span>: the derivative.`);
+    },
+    async c => {
+      const {ctrl} = c.refs;
+      ctrl.style.opacity = 1;
+      ctrl.querySelector('input').addEventListener('input', e => c.at(parseFloat(e.target.value)));
+      c.say(`<b>Scrub x</b> — top’s slope = bottom’s height, always.`);
+      await wait(200);
+    },
+  ],
+},
+
+/* ---------- 7 · READING THE DERIVATIVE ---------- */
+{
+  kicker: '07 · reading a curve like a story',
+  title: 'The sign of f′ tells you everything',
+  vh: 440,
+  caption: 'A curve, read through its slope.',
+  setup(c) {
+    const G = makeGraph(c.svg, {x:[-2.6,2.6], y:[-2.2,2.2], left:170, top:20, w:620, h:340,
+      xticks:[-2,-1,1,2], yticks:[-1,1]});
+    c.refs = {G,
+      curve: G.fn(F, -2.45, 2.45, 'c-dim'),
+      segs: [],
+      pillUp: htm(c.ov, 'pill', {left:'4%', top:'12%', opacity:0},
+        `<span class="g">f′(x) &gt; 0</span> <span class="lab">— climbing ↗</span>`),
+      pillDn: htm(c.ov, 'pill', {left:'4%', top:'24%', opacity:0},
+        `<span class="r">f′(x) &lt; 0</span> <span class="lab">— falling ↘</span>`),
+      pillZr: htm(c.ov, 'pill', {left:'4%', top:'36%', opacity:0},
+        `<span class="y">f′(x) = 0</span> <span class="lab">— turning point</span>`),
+    };
+  },
+  beats: [
+    async c => {
+      const {G, curve} = c.refs;
+      await G.show(500);
+      await drawOn(curve, 1300);
+    },
+    async c => {
+      const {G, pillUp} = c.refs;
+      const s1 = G.fn(F, -2.45, -1, 'c-green');
+      const s2 = G.fn(F, 1, 2.45, 'c-green');
+      pillUp.style.opacity = 1;
+      await drawOn(s1, 700);
+      await drawOn(s2, 700);
+      c.say(`<span class="g">f′ &gt; 0</span> — climbing.`);
+    },
+    async c => {
+      const {G, pillDn} = c.refs;
+      const s = G.fn(F, -1, 1, 'c-red');
+      pillDn.style.opacity = 1;
+      await drawOn(s, 800);
+      c.say(`<span class="r">f′ &lt; 0</span> — falling.`);
+    },
+    async c => {
+      const {G, pillZr} = c.refs;
+      pillZr.style.opacity = 1;
+      [-1, 1].forEach(x => {
+        el('circle', {cx:G.X(x), cy:G.Y(F(x)), r:7, class:'f-yellow'}, G.layer);
+        el('circle', {cx:G.X(x), cy:G.Y(F(x)), r:7, class:'halo pulsing', stroke:'var(--yellow)'}, G.layer);
+        const t = el('text', {x:G.X(x), y:G.Y(F(x)) + (F(x)>0? -18 : 28), class:'mathlab f-yellow', 'text-anchor':'middle'}, G.layer);
+        t.textContent = "f'=0";
+      });
+      c.say(`<span class="y">f′ = 0</span> — peaks and valleys: where the <b>best</b> of anything hides.`);
+      await wait(300);
+    },
+  ],
+},
+
+/* ---------- 8 · SPEEDOMETER ---------- */
+{
+  kicker: '08 · real life i — your speedometer',
+  title: 'A speedometer is a derivative-computer',
+  vh: 470,
+  caption: 'One motion. Two curves.',
+  setup(c) {
+    // road
+    const road = el('g', {opacity:0}, c.svg);
+    el('line', {x1:150, y1:52, x2:810, y2:52, stroke:'#2a3147', 'stroke-width':3}, road);
+    el('line', {x1:150, y1:52, x2:810, y2:52, stroke:'#454f6b', 'stroke-width':1.4, 'stroke-dasharray':'10 12'}, road);
+    const car = el('g', {}, road);
+    el('rect', {x:-17, y:-13, width:34, height:10, rx:3, class:'f-yellow'}, car);
+    el('rect', {x:-9, y:-20, width:16, height:9, rx:2.5, class:'f-yellow'}, car);
+    el('circle', {cx:-9, cy:-2, r:3.6, fill:'#0b0e15', stroke:'#e9e7df', 'stroke-width':1.6}, car);
+    el('circle', {cx:9, cy:-2, r:3.6, fill:'#0b0e15', stroke:'#e9e7df', 'stroke-width':1.6}, car);
+    car.setAttribute('transform','translate(150,50)');
+    const G1 = makeGraph(c.svg, {x:[0,8.4], y:[0,130], left:150, top:88, w:660, h:152,
+      xticks:[0,2,4,6,8], yticks:[60,120], ylab:'position s(t)  (m)'});
+    const G2 = makeGraph(c.svg, {x:[0,8.4], y:[0,27], left:150, top:288, w:660, h:152,
+      xticks:[0,2,4,6,8], yticks:[10,20], xlab:'time (s)', ylab:"speed v(t) = s'(t)  (m/s)"});
+    const curve1 = G1.fn(CAR.s, 0, 8, 'c-blue');
+    const trail = el('polyline', {fill:'none', class:'curve c-green', points:''}, G2.layer);
+    const d1 = el('circle', {r:6, class:'f-yellow', opacity:0}, G1.layer);
+    const d2 = el('circle', {r:6, class:'f-green', opacity:0}, G2.layer);
+    const speedo = htm(c.ov, 'pill', {right:'4%', top:'1%', opacity:0}, '');
+    c.refs = {road, car, G1, G2, curve1, trail, d1, d2, speedo, pts:[]};
+  },
+  beats: [
+    async c => {
+      const {road, G1, G2, curve1} = c.refs;
+      tween({dur:600, update: t => road.setAttribute('opacity', t)});
+      G1.show(600); G2.show(600);
+      await drawOn(curve1, 1400);
+      c.say(`The bottom graph is empty — the drive itself will draw it.`);
+    },
+    async c => {
+      const {car, G1, G2, trail, d1, d2, speedo, pts} = c.refs;
+      d1.setAttribute('opacity',1); d2.setAttribute('opacity',1); speedo.style.opacity = 1;
+      await tween({dur:5200, ease:'linear', update: t => {
+        const tt = 8*t, s = CAR.s(tt), v = CAR.v(tt);
+        car.setAttribute('transform', `translate(${150 + 660*(s/120)},50)`);
+        d1.setAttribute('cx', G1.X(tt)); d1.setAttribute('cy', G1.Y(s));
+        d2.setAttribute('cx', G2.X(tt)); d2.setAttribute('cy', G2.Y(v));
+        pts.push(`${G2.X(tt).toFixed(1)},${G2.Y(v).toFixed(1)}`);
+        trail.setAttribute('points', pts.join(' '));
+        speedo.innerHTML = `<span class="lab">speedometer</span> <span class="g bigread">${fmt(v,1)}</span> <span class="lab">m/s</span>`;
+      }});
+      // solidify the full v(t) curve (robust even if the drive was skipped)
+      const full = [];
+      for (let i = 0; i <= 200; i++) {
+        const tt = 8*i/200;
+        full.push(`${G2.X(tt).toFixed(1)},${G2.Y(CAR.v(tt)).toFixed(1)}`);
+      }
+      trail.setAttribute('points', full.join(' '));
+      c.say(`v = s′ — the speedometer is a derivative-computer. (<b>r</b> replays.)`);
+    },
+  ],
+},
+
+/* ---------- 9 · GRADIENT DESCENT ---------- */
+{
+  kicker: '09 · real life ii — how machines learn',
+  title: 'Gradient descent: let the derivative point downhill',
+  vh: 450,
+  caption: 'How a machine learns: roll downhill on the loss.',
+  setup(c) {
+    const G = makeGraph(c.svg, {x:[-3.5,3.5], y:[0,10], left:150, top:18, w:640, h:345,
+      xticks:[-2,2], yticks:[]});
+    const bowl = G.fn(L, -3.05, 3.05, 'c-purple');
+    const ball = el('circle', {r:9, class:'f-red', opacity:0}, G.layer);
+    el('circle', {r:16, fill:'transparent'}, G.layer);
+    const tanl = el('path', {class:'curve c-yellow thin', fill:'none', opacity:0}, G.layer);
+    const marks = el('g', {}, G.layer);
+    const lab = htm(c.ov, 'eq fade0', {left:'8%', top:'4%'}, '');
+    tex(lab, String.raw`\text{loss } L(x)`);
+    const rule = htm(c.ov, 'eq fade0', {right:'5%', top:'5%'}, '');
+    tex(rule, String.raw`x \leftarrow x - \eta\, L'(x)`, {displayMode:true});
+    const status = htm(c.ov, 'badge ok', {right:'5%', top:'26%', opacity:0}, '');
+    const ctrl = htm(c.ov, 'ctrl ui', {left:'50%', bottom:'3%', transform:'translateX(-50%)', opacity:0},
+      `<span>learning rate η</span><input type="range" min="0.05" max="2.4" step="0.05" value="0.35"><span class="val">η=0.35</span><button>run ▸</button>`);
+    c.refs = {G, bowl, ball, tanl, marks, lab, rule, status, ctrl, x0:2.6, eta:0.35, running:false};
+    c.place = x => {
+      c.refs.ball.setAttribute('cx', G.X(x));
+      c.refs.ball.setAttribute('cy', G.Y(L(x)) - 9);
+    };
+  },
+  beats: [
+    async c => {
+      const {G, bowl, ball, lab} = c.refs;
+      G.show(500);
+      fadeInHtml(lab);
+      await drawOn(bowl, 1400);
+      c.place(c.refs.x0);
+      await fadeIn(ball, 500);
+      c.say(`The ball is blind. It only feels <b>the slope under its feet</b>.`);
+    },
+    async c => {
+      await fadeInHtml(c.refs.rule);
+      await runDescent(c);
+      c.say(`Step <b>against</b> the slope, again and again — that’s training.`);
+    },
+    async c => {
+      const {ctrl, G, ball} = c.refs;
+      ctrl.style.opacity = 1;
+      const inp = ctrl.querySelector('input'), val = ctrl.querySelector('.val'), btn = ctrl.querySelector('button');
+      inp.addEventListener('input', () => { c.refs.eta = parseFloat(inp.value); val.textContent = `η=${fmt(c.refs.eta,2)}`; });
+      btn.addEventListener('click', () => { if (!c.refs.running) runDescent(c); });
+      draggable(ball, c.svg, p => {
+        if (c.refs.running) return;
+        const x = Math.min(Math.max((p.x - G.X(0)) / (G.X(1)-G.X(0)), -2.95), 2.95);
+        c.refs.x0 = x; c.place(x);
+        c.refs.marks.innerHTML = ''; c.refs.tanl.setAttribute('opacity',0); c.refs.status.style.opacity = 0;
+      });
+      c.say(`<b>Drag the ball</b>, pick η, <b>run</b>. Past η ≈ 1.5 it <span class="r">explodes</span>.`);
+      await wait(200);
+    },
+  ],
+},
+
+/* ---------- 10 · CURVE → SURFACE (the bridge) ---------- */
+{
+  kicker: '10 · from a curve to a surface',
+  title: 'What if the height depends on <em>two</em> inputs?',
+  vh: 484,
+  caption: 'Our old world: one input, one output.',
+  setup(c) {
+    build3DStage(c, {cam:{theta:0, phi:0.12}, showPt:false});
+    const cam = c.refs.cam, D = CFG3.dom;
+    c.refs.surf.g.setAttribute('opacity', 0);   // surface hidden until it "fills in"
+    const slice = el('path', {class:'curve c-blue', fill:'none', opacity:0}, c.svg);
+    c.refs.slice = slice;
+    c.refs._extra.push(() => {
+      const pts = [];
+      for (let i=0;i<=80;i++){ const x = -D + 2*D*i/80; pts.push([x, 0, F3(x, 0)]); }
+      slice.setAttribute('d', poly3(pts, cam));
+    });
+    c.refs.redraw();
+  },
+  beats: [
+    async c => {
+      c.refs.slice.setAttribute('opacity', 1);
+      await drawOn(c.refs.slice, 1400);
+      c.say('A height that depends on <span class="bl">one</span> input — the curve we already know.');
+    },
+    async c => {
+      const cam = c.refs.cam, th0 = cam.theta, ph0 = cam.phi;
+      c.say('Add a <b>second</b> input — and that curve fills out into a <b>surface</b>.');
+      await tween({dur:2800, ease:'inOutCubic', update: t => {
+        cam.theta = lerp(th0, CFG3.theta, t);
+        cam.phi   = lerp(ph0, CFG3.phi, t);
+        c.refs.surf.g.setAttribute('opacity', t);   // fade the surface in as we tilt up
+        c.refs.redraw();
+      }});
+    },
+    async c => {
+      c.refs.showPt = true; c.refs.redraw();
+      orbitControl(c, c.refs.cam, c.refs.redraw);
+      c.say('Every point on the ground now has a height <span class="y">f(x, y)</span>. <b>Drag to look around.</b>');
+      await wait(200);
+    },
+  ],
+},
+
+/* ---------- 11 · TANGENT LINE → TANGENT PLANE ---------- */
+{
+  kicker: '11 · the tangent line grows up',
+  title: 'One slope made a line — <em>two</em> slopes make a plane',
+  vh: 484,
+  caption: 'Pick a point on the hill.',
+  setup(c) {
+    build3DStage(c, {});
+    const cam = c.refs.cam, D = CFG3.dom;
+    const sliceX = el('path', {class:'curve c-yellow thin', fill:'none', opacity:0}, c.svg);
+    const sliceY = el('path', {class:'curve c-green thin',  fill:'none', opacity:0}, c.svg);
+    const plane  = el('path', {fill:'var(--yellow)', 'fill-opacity':0.15, stroke:'var(--yellow)', 'stroke-width':1.4, 'stroke-opacity':.7, opacity:0}, c.svg);
+    const tanX = el('path', {class:'curve c-yellow', fill:'none', opacity:0, 'stroke-width':3}, c.svg);
+    const tanY = el('path', {class:'curve c-green',  fill:'none', opacity:0, 'stroke-width':3}, c.svg);
+    const readX = htm(c.ov, 'pill', {left:'5%', top:'9%',  opacity:0}, '');
+    const readY = htm(c.ov, 'pill', {left:'5%', top:'19%', opacity:0}, '');
+    const eq = htm(c.ov, 'eq fade0', {right:'4%', top:'9%'}, '');
+    tex(eq, String.raw`z \approx f + \textcolor{#ffd45e}{f_x}\,\Delta x + \textcolor{#7fd483}{f_y}\,\Delta y`);
+    Object.assign(c.refs, {sliceX, sliceY, plane, tanX, tanY, readX, readY, eq, planeT:0});
+    c.refs._extra.push(() => {
+      const px=c.refs.px, py=c.refs.py, z0=F3(px,py), mx=F3x(px,py), my=F3y(px,py), du=1.15;
+      const sx=[], sy=[];
+      for (let i=0;i<=64;i++){ const x=-D+2*D*i/64; sx.push([x,py,F3(x,py)]); }
+      for (let i=0;i<=64;i++){ const y=-D+2*D*i/64; sy.push([px,y,F3(px,y)]); }
+      sliceX.setAttribute('d', poly3(sx, cam));
+      sliceY.setAttribute('d', poly3(sy, cam));
+      tanX.setAttribute('d', poly3([[px-du,py,z0-mx*du],[px+du,py,z0+mx*du]], cam));
+      tanY.setAttribute('d', poly3([[px,py-du,z0-my*du],[px,py+du,z0+my*du]], cam));
+      const s = c.refs.planeT*1.7, P = (dx,dy) => [px+dx, py+dy, z0+mx*dx+my*dy];
+      plane.setAttribute('d', poly3([P(-s,-s),P(s,-s),P(s,s),P(-s,s),P(-s,-s)], cam));
+      readX.innerHTML = `<span class="lab">∂f/∂x =</span> <span class="y bigread">${fmt(mx,2)}</span>`;
+      readY.innerHTML = `<span class="lab">∂f/∂y =</span> <span class="g bigread">${fmt(my,2)}</span>`;
+    });
+    c.refs.redraw();
+  },
+  beats: [
+    async c => {
+      c.refs.sliceX.setAttribute('opacity', 1);
+      await drawOn(c.refs.sliceX, 800);
+      c.refs.tanX.setAttribute('opacity', 1); c.refs.readX.style.opacity = 1;
+      await drawOn(c.refs.tanX, 700);
+      c.say('Walk along <span class="y">x</span>: a curve, with a tangent line — slope <span class="y">∂f/∂x</span>.');
+    },
+    async c => {
+      c.refs.sliceY.setAttribute('opacity', 1);
+      await drawOn(c.refs.sliceY, 800);
+      c.refs.tanY.setAttribute('opacity', 1); c.refs.readY.style.opacity = 1;
+      await drawOn(c.refs.tanY, 700);
+      c.say('Walk along <span class="bl">y</span>: another tangent line — slope <span class="g">∂f/∂y</span>.');
+    },
+    async c => {
+      c.refs.plane.setAttribute('opacity', 1);
+      fadeInHtml(c.refs.eq);
+      await tween({dur:2400, ease:'outCubic', update: t => { c.refs.planeT = t; c.refs.redraw(); }});
+      c.say('Two lines pin one <b>plane</b> — the surface’s <b>best flat approximation</b> at the point.');
+    },
+    async c => {
+      orbitControl(c, c.refs.cam, c.refs.redraw);
+      const ctrl = pointControl(c, c.refs.redraw); ctrl.style.opacity = 1;
+      c.say('<b>Drag to orbit</b>, or move the point — the plane stays flat against the hill.');
+      await wait(200);
+    },
+  ],
+},
+
+/* ---------- 12 · THE GRADIENT → DESCENT ---------- */
+{
+  kicker: '12 · which way is downhill?',
+  title: 'Bundle the two slopes into one arrow: the <em>gradient</em>',
+  vh: 484,
+  caption: 'Two slopes, packed into one direction.',
+  setup(c) {
+    build3DStage(c, {});
+    const cam = c.refs.cam;
+    const gArrow = el('line', {stroke:'var(--red)', 'stroke-width':3.4, 'stroke-linecap':'round', opacity:0}, c.svg);
+    const gHead  = el('path', {fill:'var(--red)', opacity:0}, c.svg);
+    const dArrow = el('line', {stroke:'var(--green)', 'stroke-width':3.2, 'stroke-linecap':'round', opacity:0}, c.svg);
+    const dHead  = el('path', {fill:'var(--green)', opacity:0}, c.svg);
+    const ball   = el('circle', {r:7, class:'f-green', opacity:0}, c.svg);
+    const read   = htm(c.ov, 'pill', {left:'5%', top:'9%', opacity:0}, '');
+    Object.assign(c.refs, {gArrow, gHead, dArrow, dHead, ball, read, gScale:0, dScale:0, bx:CFG3.x0, by:CFG3.y0});
+    c.refs._extra.push(() => {
+      const px=c.refs.px, py=c.refs.py, gx=F3x(px,py), gy=F3y(px,py), z0=F3(px,py);
+      const gn=Math.hypot(gx,gy)||1, ux=gx/gn, uy=gy/gn, len=1.6*c.refs.gScale;
+      const sx=px+ux*len, sy=py+uy*len;
+      const u0=proj3(px,py,z0,cam), u1=proj3(sx,sy,F3(sx,sy),cam);
+      setLine(gArrow,u0,u1); gHead.setAttribute('d', headD(u0,u1,11));
+      const bgx=F3x(c.refs.bx,c.refs.by), bgy=F3y(c.refs.bx,c.refs.by), bz=F3(c.refs.bx,c.refs.by);
+      const bn=Math.hypot(bgx,bgy)||1, dl=1.4*c.refs.dScale;
+      const dx2=c.refs.bx-bgx/bn*dl, dy2=c.refs.by-bgy/bn*dl;
+      const d0=proj3(c.refs.bx,c.refs.by,bz,cam), d1=proj3(dx2,dy2,F3(dx2,dy2),cam);
+      setLine(dArrow,d0,d1); dHead.setAttribute('d', headD(d0,d1,10));
+      ball.setAttribute('cx', d0.x); ball.setAttribute('cy', d0.y);
+      read.innerHTML = `<span class="lab">∇f =</span> (<span class="r">${fmt(gx,2)}</span>, <span class="r">${fmt(gy,2)}</span>)`;
+    });
+    c.refs.redraw();
+  },
+  beats: [
+    async c => {
+      c.refs.gArrow.setAttribute('opacity',1); c.refs.gHead.setAttribute('opacity',1); c.refs.read.style.opacity=1;
+      await tween({dur:900, ease:'outCubic', update: t => { c.refs.gScale=t; c.refs.redraw(); }});
+      c.say('The <span class="r">gradient ∇f</span> points in the single <b>steepest-uphill</b> direction.');
+    },
+    async c => {
+      c.refs.ball.setAttribute('opacity',1); c.refs.dArrow.setAttribute('opacity',1); c.refs.dHead.setAttribute('opacity',1);
+      c.say('Flip the sign: <span class="g">−∇f</span> points <b>downhill</b>. Take a step — then look again.');
+      await tween({dur:600, ease:'outCubic', update: t => { c.refs.dScale=t; c.refs.redraw(); }});
+      for (let k=0;k<6;k++){
+        const gx=F3x(c.refs.bx,c.refs.by), gy=F3y(c.refs.bx,c.refs.by);
+        const fx=c.refs.bx, fy=c.refs.by, nx=fx-0.5*gx, ny=fy-0.5*gy;
+        await tween({dur:430, ease:'inOutCubic', update: t => { c.refs.bx=lerp(fx,nx,t); c.refs.by=lerp(fy,ny,t); c.refs.redraw(); }});
+      }
+    },
+    async c => {
+      orbitControl(c, c.refs.cam, c.refs.redraw);
+      c.say('Roll downhill, step after step — that’s <span class="y">gradient descent</span>, now in <b>any</b> dimension. <b>Drag to orbit.</b>');
+      await wait(200);
+    },
+  ],
+},
+
+/* ---------- 13 · RECAP ---------- */
+{
+  kicker: '13 · one idea, every dimension',
+  title: 'What you now know',
+  vh: 360,
+  caption: '',
+  setup(c) {
+    const cards = htm(c.ov, 'cards', {}, '');
+    const mk = (cls, tag, name, body, art) => {
+      const d = document.createElement('div');
+      d.className = 'card ' + cls;
+      d.innerHTML = `<h3><span>${tag}</span>${name}</h3>${art}<p>${body}</p>`;
+      d.style.opacity = 0;
+      cards.appendChild(d);
+      return d;
+    };
+    c.refs = {
+      c1: mk('c1','geometry','Slope',
+        'The tangent line’s steepness, caught at a single instant.',
+        `<svg viewBox="0 0 240 86"><path d="M14 72 Q 90 72 130 40 T 228 12" fill="none" stroke="#58c4dd" stroke-width="3"/><line x1="86" y1="76" x2="186" y2="22" stroke="#ffd45e" stroke-width="2.4"/><circle cx="136" cy="49" r="5" fill="#ffd45e"/></svg>`),
+      c2: mk('c2','rate of change','Speed',
+        'The rate of any change: your speedometer reads s′(t).',
+        `<svg viewBox="0 0 240 86"><path d="M120 76 A 56 56 0 1 1 120.1 76" fill="none" stroke="#3a4154" stroke-width="6" stroke-linecap="round" transform="rotate(90 120 48)"/><path d="M64 48 A 56 56 0 0 1 120 -8" fill="none" stroke="#7fd483" stroke-width="6" stroke-linecap="round" transform="translate(0,56) rotate(0)" opacity="0"/><line x1="120" y1="62" x2="158" y2="26" stroke="#7fd483" stroke-width="3.4" stroke-linecap="round"/><circle cx="120" cy="62" r="6" fill="#7fd483"/></svg>`),
+      c3: mk('c3','optimization','Direction',
+        'The gradient ∇f points uphill — flip it and you train neural networks.',
+        `<svg viewBox="0 0 240 86"><path d="M16 14 Q 120 120 224 14" fill="none" stroke="#c792ea" stroke-width="3"/><circle cx="60" cy="42" r="6" fill="#ff6f61"/><circle cx="94" cy="58" r="5" fill="#ff6f61" opacity=".75"/><circle cx="120" cy="63" r="4.5" fill="#ff6f61" opacity=".55"/><path d="M66 34 l 22 12" stroke="#ffd45e" stroke-width="2.4" marker-end=""/></svg>`),
+      c4: mk('c4','any dimension','Plane',
+        'One input or many: a tangent <b>line</b> becomes a tangent <b>plane</b> — the best flat fit.',
+        `<svg viewBox="0 0 240 86">
+           <path d="M8 64 Q 36 64 52 44 T 92 22" fill="none" stroke="#58c4dd" stroke-width="2.6"/>
+           <line x1="40" y1="62" x2="84" y2="30" stroke="#ffd45e" stroke-width="2.2"/>
+           <circle cx="62" cy="46" r="3.6" fill="#ffd45e"/>
+           <path d="M104 44 L 126 44" stroke="#7d869c" stroke-width="2"/>
+           <path d="M126 44 l -6 -3.4 l 0 6.8 z" fill="#7d869c"/>
+           <path d="M150 56 Q 178 30 206 50" fill="none" stroke="#58c4dd" stroke-width="2.4"/>
+           <path d="M158 68 Q 186 44 214 62" fill="none" stroke="#3f8fb0" stroke-width="2"/>
+           <path d="M168 40 L 214 34 L 222 52 L 176 58 Z" fill="#ffd45e" fill-opacity="0.18" stroke="#ffd45e" stroke-width="1.4"/>
+           <circle cx="191" cy="47" r="3.6" fill="#ffd45e"/>
+         </svg>`),
+    };
+  },
+  beats: [
+    async c => { await fadeIn(c.refs.c1, 600, 16); c.say('Geometry: a <span class="bl">slope</span>.'); },
+    async c => { await fadeIn(c.refs.c2, 600, 16); c.say('Physics: a <span class="g">rate</span>.'); },
+    async c => { await fadeIn(c.refs.c3, 600, 16); c.say('Optimization: a <span class="r">direction</span>.'); },
+    async c => {
+      await fadeIn(c.refs.c4, 600, 16);
+      c.say(`One move, every dimension — <span class="y">a line in 1D becomes a plane in many</span>.`);
+    },
+  ],
+},
+];
+
+/* slide-9 descent runner (shared by beat 2 and the run button) */
+async function runDescent(c) {
+  const {G, ball, tanl, marks, status} = c.refs;
+  c.refs.running = true;
+  const btn = c.refs.ctrl.querySelector('button');
+  btn.disabled = true;
+  marks.innerHTML = '';
+  status.style.opacity = 0;
+  tanl.setAttribute('opacity', 1);
+  let x = c.refs.x0;
+  c.place(x);
+  let result = null, steps = 0;
+  for (let k = 0; k < 14; k++) {
+    const g = Lp(x), dx = 0.5;
+    tanl.setAttribute('d', `M ${G.X(x-dx)} ${G.Y(L(x)-g*dx)} L ${G.X(x+dx)} ${G.Y(L(x)+g*dx)}`);
+    el('line', {x1:G.X(x), y1:G.Y(0)+8, x2:G.X(x), y2:G.Y(0)+16, stroke:'var(--red)', 'stroke-width':2, opacity:.8}, marks);
+    await wait(380);
+    const nx = x - c.refs.eta * g;
+    steps++;
+    if (Math.abs(nx) > 3.4) {
+      await tween({dur:420, ease:'outCubic', update: t => c.place(lerp(x, Math.sign(nx)*3.05, t))});
+      result = ['bad', `diverged · η too big`];
+      break;
+    }
+    const from = x;
+    await tween({dur:480, ease:'inOutCubic', update: t => c.place(lerp(from, nx, t))});
+    x = nx;
+    if (Math.abs(c.refs.eta * Lp(x)) < 0.015) { result = ['ok', `converged in ${steps} steps`]; break; }
+  }
+  if (!result) result = ['ok', `${steps} steps — still going`];
+  tanl.setAttribute('opacity', 0);
+  status.className = 'badge ' + result[0];
+  status.textContent = result[1];
+  status.style.position = 'absolute';
+  status.style.opacity = 1;
+  btn.disabled = false;
+  c.refs.running = false;
+}
+
+/* ================= deck controller ================= */
+const deck = document.getElementById('deck');
+const dotsEl = document.getElementById('dots');
+const counterEl = document.getElementById('counter');
+slides.forEach(() => dotsEl.appendChild(document.createElement('i')));
+
+let cur = -1, beat = 0, playing = false, section = null, ctx = null;
+
+function buildSlide(i) {
+  const sl = slides[i];
+  const sec = document.createElement('section');
+  sec.className = 'slide';
+  sec.innerHTML = `
+    <div class="frame">
+      <header>
+        <div>
+          <div class="kicker">${sl.kicker}</div>
+          ${sl.title ? `<h2>${sl.title}</h2>` : ''}
+        </div>
+        <div class="beats">${sl.beats.map(()=>'<i></i>').join('')}</div>
+      </header>
+      <div class="stage">
+        <svg viewBox="0 0 960 ${sl.vh}" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="overlay"></div>
+      </div>
+      <p class="caption">${sl.caption || ''}</p>
+    </div>`;
+  deck.appendChild(sec);
+  const cap = sec.querySelector('.caption');
+  const c = {
+    svg: sec.querySelector('svg'),
+    ov: sec.querySelector('.overlay'),
+    refs: {},
+    say(html) {
+      cap.classList.add('fading');
+      setTimeout(() => { cap.innerHTML = html; cap.classList.remove('fading'); }, 180);
+    },
+  };
+  sl.setup(c);
+  return {sec, c};
+}
+
+function markBeats() {
+  if (!section) return;
+  section.querySelectorAll('.beats i').forEach((d, j) => d.classList.toggle('done', j < beat));
+  dotsEl.querySelectorAll('i').forEach((d, j) => {
+    d.classList.toggle('cur', j === cur);
+    d.classList.toggle('seen', j < cur);
+  });
+  counterEl.textContent = String(cur+1).padStart(2,'0') + ' / ' + String(slides.length).padStart(2,'0');
+}
+
+async function playBeat() {
+  const sl = slides[cur];
+  if (beat >= sl.beats.length) return false;
+  playing = true;
+  const myCtx = ctx;
+  const b = beat++;
+  markBeats();
+  try { await sl.beats[b](myCtx); } catch(e) { console.error('beat error', e); }
+  if (myCtx === ctx) playing = false;
+  markBeats();
+  return true;
+}
+
+function goTo(i, autoplay=true) {
+  if (i < 0 || i >= slides.length) return;
+  flushTweens();
+  playing = false;
+  const old = section;
+  if (old) {
+    old.classList.remove('active');
+    old.classList.add('exit');
+    setTimeout(() => old.remove(), 550);
+  }
+  cur = i; beat = 0;
+  const built = buildSlide(i);
+  section = built.sec; ctx = built.c;
+  void section.offsetWidth; // force reflow so the enter transition runs
+  section.classList.add('active');
+  markBeats();
+  if (autoplay) setTimeout(() => playBeat(), 420);
+}
+
+function advance() {
+  if (playing) { flushTweens(); return; }
+  if (beat < slides[cur].beats.length) playBeat();
+  else if (cur < slides.length - 1) goTo(cur + 1);
+}
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { e.preventDefault(); advance(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(cur - 1); }
+  else if (e.key === 'r' || e.key === 'R') goTo(cur);
+});
+document.getElementById('bNext').addEventListener('click', advance);
+document.getElementById('bPrev').addEventListener('click', () => goTo(cur - 1));
+deck.addEventListener('click', e => {
+  if (e.target.closest('input,button,.handle,.ctrl')) return;
+  advance();
+});
+
+goTo(0);
+</script>
+</body>
+</html>

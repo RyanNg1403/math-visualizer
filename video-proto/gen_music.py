@@ -5,9 +5,10 @@ gentle sparkle layer. Pure numpy synthesis -> stereo 44.1 kHz WAV.
 """
 import numpy as np
 import wave
+import sys
 
 SR = 44100
-DUR = 200.0          # generous; trimmed at mux time
+DUR = float(sys.argv[1]) if len(sys.argv) > 1 else 200.0  # generous; trimmed at mux time
 CHORD_LEN = 8.0
 FADE = 3.0           # crossfade between chords
 
