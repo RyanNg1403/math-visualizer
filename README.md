@@ -1,4 +1,4 @@
-# math-visualizer
+# stem-visualizer
 
 Manim-quality math explainers, built with plain web tech and rendered to video — plus the **agent skill** that encodes the whole workflow so a coding agent (Codex, Claude Code, or any agent that reads `SKILL.md` playbooks) can reproduce it for a new concept end to end.
 
@@ -6,7 +6,7 @@ Manim-quality math explainers, built with plain web tech and rendered to video �
 
 | Path | What it is |
 |---|---|
-| `src/` + `index.html` (Vite) | **Math Visualizer** — Ivory Scholar chat / interactive web app that plays the explainer videos. Sources its lessons from the registry. Run with `npm install` then `npm run dev`. |
+| `src/` + `index.html` (Vite) | **STEM Visualizer** — Ivory Scholar chat / interactive web app that plays the explainer videos. Sources its lessons from the registry. Run with `npm install` then `npm run dev`. |
 | `explainers/<id>/` | One self-contained STEM lesson each — `deck.html` (standalone interactive deck), `<id>.mp4` (1080p60 video), `poster.jpg`, and the `motion-canvas/` project that renders it. Currently **derivative** (slope → tangent plane → gradient, with a click-to-orbit 3D act) and **taylor**. Open any `deck.html` directly in a browser. |
 | `explainers/registry.ts` | **Single source of truth** — the typed list of explainers the web app renders from. Adding a lesson = drop a folder + one entry here. |
 | `ARCHITECTURE.md` | The project structure and the step-by-step recipe for adding a new explainer. |

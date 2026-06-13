@@ -8,9 +8,9 @@ new lesson is a fixed recipe, not a wiring exercise.
 ## Layout
 
 ```
-math-visualizer/
+stem-visualizer/
 ├─ index.html, ivory-scholar.html   # web-app entry points (Vite)
-├─ src/                             # the "Math Visualizer" web app
+├─ src/                             # the "STEM Visualizer" web app
 │  ├─ main.ts                       # app logic
 │  ├─ app-html.ts                   # markup; pulls lesson assets from the registry
 │  └─ styles.css

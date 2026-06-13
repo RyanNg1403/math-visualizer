@@ -93,7 +93,7 @@ function lessonCardHtml(lesson: Explainer): string {
 
   return `
     <article class="message">
-      <div class="avatar assistant">MV</div>
+      <div class="avatar assistant">SV</div>
       <div class="message-body">
         <p>${escapeHtml(lesson.blurb)}</p>
         <div class="video-result">
@@ -119,7 +119,7 @@ function lessonCardHtml(lesson: Explainer): string {
 function thinkingHtml(): string {
   return `
     <article class="message" data-thinking>
-      <div class="avatar assistant">MV</div>
+      <div class="avatar assistant">SV</div>
       <div class="message-body">
         <div class="thinking"><span class="pulse-dot"></span><span>Storyboarding scenes</span></div>
       </div>
@@ -129,7 +129,7 @@ function thinkingHtml(): string {
 // home: a short welcome + the registry as a clickable library grid
 function renderHome(): void {
   currentLesson = null;
-  lessonTitle.textContent = 'Math Visualizer';
+  lessonTitle.textContent = 'STEM Visualizer';
   interactiveTitle.textContent = 'Interactive explorer';
 
   const cards = explainers
@@ -145,7 +145,7 @@ function renderHome(): void {
 
   conversationInner.innerHTML = `
     <article class="message">
-      <div class="avatar assistant">MV</div>
+      <div class="avatar assistant">SV</div>
       <div class="message-body">
         <p>Pick an explainer from the library, or describe a STEM concept and I'll build one.</p>
         <div class="library-grid">${cards}</div>
@@ -227,7 +227,7 @@ async function submitPrompt(text: string): Promise<void> {
     conversationInner.querySelector('[data-thinking]')?.remove();
     conversationInner.insertAdjacentHTML(
       'beforeend',
-      `<article class="message"><div class="avatar assistant">MV</div><div class="message-body"><p>Sorry — I couldn't build that lesson just now.</p></div></article>`,
+      `<article class="message"><div class="avatar assistant">SV</div><div class="message-body"><p>Sorry — I couldn't build that lesson just now.</p></div></article>`,
     );
   }
 }
