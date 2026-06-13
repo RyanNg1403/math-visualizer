@@ -9,3 +9,4 @@ verify_frames/
 !.claude/skills/
 .codex/*
 !.codex/skills/
+skill-eval/

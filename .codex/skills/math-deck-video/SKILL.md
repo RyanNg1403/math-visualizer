@@ -1,11 +1,13 @@
 ---
 name: math-deck-video
-description: Build a Manim-quality visual explainer for a math or technical concept in two phases - first an interactive HTML slide deck (SVG + KaTeX, choreographed animation beats, dark 3Blue1Brown aesthetic), then a Motion Canvas port rendered as a 1080p60 MP4 with an ambient music bed. Use this whenever the user wants to visualize, animate, teach, or explain a mathematical, scientific, or algorithmic concept - "make a demo of X", "explain X visually", "create an animation/video about X", "3Blue1Brown-style anything" - even if they only mention one of the two output formats.
+description: Build a Manim-quality visual explainer for any STEM concept - math, physics, chemistry, biology, computer science, engineering - in two phases - first an interactive HTML slide deck (SVG + KaTeX, choreographed animation beats, draggable/slider controls, dark 3Blue1Brown aesthetic), then a Motion Canvas port rendered as a 1080p60 MP4 with an ambient music bed. Use this whenever the user wants to visualize, animate, teach, or explain any scientific, mathematical, or algorithmic concept - "make a demo of X", "explain X visually", "create an animation/video about X", "3Blue1Brown-style anything" - even if they only mention one of the two output formats.
 ---
 
-# Math deck → video
+# STEM deck → video
 
 This is a complete playbook — it assumes no prior context and bundles working reference implementations, so any coding agent can follow it. Read the referenced files at the point each phase begins; they contain the accumulated taste and the exact bugs already paid for once.
+
+**Works for any STEM subject.** The reference implementations happen to be math (a derivative, a Taylor series), but nothing here is math-specific: a "curve" is any quantity-vs-quantity plot (position vs time, pressure vs volume, population vs generation, rate vs concentration), the palette/motion/caption rules are subject-agnostic, and KaTeX renders chemical and physical formulas just as well. Treat the math examples as worked templates and swap in your subject's objects (a projectile, a titration curve, a sorting array, an allele-frequency bar).
 
 **Map of the playbook:**
 
@@ -13,6 +15,7 @@ This is a complete playbook — it assumes no prior context and bundles working 
 |---|---|
 | `references/design-taste.md` | Phase 0 — the judgment calls: pedagogy, motion, look, caption voice |
 | `references/deck-patterns.md` | Phase 1 — deck architecture, pitfalls, verification procedure |
+| `references/interactivity.md` | Phase 1 — **how to build controls (sliders, drag, toggles) that actually teach**; read this for any interactive slide |
 | `references/motion-canvas-port.md` | Phase 2 — scaffold, port recipe, the five gotchas, render procedure |
 | `references/video-pipeline.md` | Phase 2 — music, mux, final QA commands |
 | `references/checklist.md` | Continuously — phase gates; don't advance with unchecked items |
@@ -33,7 +36,7 @@ Read `references/design-taste.md` first - it holds the judgment calls that make 
 - **Audience floor.** What can the viewer be assumed to know? Default: comfortable with functions and graphs, nothing beyond. Every scene must be watchable from that floor.
 - **Narrative arc.** 8-12 scenes following: *concrete hook → build intuition visually → formalize (the equation arrives last, after the viewer has already watched everything it says) → 1-2 real-life applications chosen for the audience → recap that unifies*. The strongest scenes animate **one idea each**.
 - **The money shot.** Identify the single animation that carries the concept (for derivatives it was secant→tangent as h→0). Give it the most screen time and the slowest easing.
-- **Interactive moments.** Pick 2-3 slides that gain the most from a slider or draggable point - typically the money shot and the applications. Interactivity is what the HTML medium adds over video; in the video phase these become scripted "ghost interactions".
+- **Interactive moments.** Interactivity is the whole reason the deck exists — and the most common weak spot in generated decks. Pick the 2-3 slides where the viewer would most want to *change a parameter and see what happens* (a launch angle, a temperature, a learning rate, an array size), typically the money shot and the applications, and plan a real control there — a slider, a draggable handle, or a toggle. `references/interactivity.md` is the recipe; do not ship a slide whose "interaction" is a control that changes nothing visible. In the video phase these become scripted "ghost interactions".
 - **Captions carry narration.** One short italic line per beat, subtitle-style. The visuals do the explaining; if a caption needs two sentences, the animation is not doing its job.
 
 Ask the user only what genuinely changes the design (audience, applications domain); default everything else.
@@ -47,7 +50,8 @@ The short version:
 1. **One self-contained HTML file** (CDN for KaTeX + Google Fonts only). Copy the animation engine from `assets/example-deck.html` (a complete, verified 10-scene deck) - the tween/flush engine, `makeGraph`, `drawOn`, the slide/beat controller, and the HUD are reusable as-is; replace the `slides` array and palette accents.
 2. **Beats, not autoplay.** Each slide is a list of `async` beat functions; → plays the next beat, exactly like Manim's `self.play` calls. Beat 0 autoplays on slide entry.
 3. **Dark Manim aesthetic.** Near-black blue background, one serif display font + one mono for readouts, Manim-ish palette (blue curve, yellow highlight, green/red semantic), draw-on curves, KaTeX for every formula.
-4. **Verify in a real browser, slide by slide** - not just the happy path. Use whatever browser automation is available (built-in browser tools, Playwright, Puppeteer - any of them work; the procedures in the reference are tool-agnostic). Fast-forward beats with the microtask flush trick when the tab is occluded (Chrome freezes rAF in covered tabs), screenshot every slide's final state, and drive interactions with real pointer events. Check for overlapping elements; formulas belong in empty graph regions.
+4. **Interactivity is the deck's reason to exist.** Read `references/interactivity.md` and give the money-shot and application slides at least one *meaningful* control — a slider, draggable handle, or toggle — wired through a single render-from-state function (`c.update()`), each bound to a visible change and a live readout. One or two purposeful knobs beat five decorative ones; a control that changes nothing is a bug.
+5. **Verify in a real browser, slide by slide** - not just the happy path. Use whatever browser automation is available (built-in browser tools, Playwright, Puppeteer - any of them work; the procedures in the reference are tool-agnostic). Fast-forward beats with the microtask flush trick when the tab is occluded (Chrome freezes rAF in covered tabs), screenshot every slide's final state, and **drive every control with real pointer/input events, reading back a value to confirm the picture actually moved**. Check for overlapping elements; formulas belong in empty graph regions.
 
 ## Phase 2 - The video
 
@@ -66,4 +70,5 @@ The short version:
 - Zero console errors; every formula renders (a missing fraction bar or minus sign is a known failure mode - see the gotchas reference).
 - Nothing overlaps: readouts, formulas, labels, and moving elements each own empty space. When two labeled points can merge during an animation, fade one label out as they approach.
 - Animated traces (a curve being drawn by a moving point) must be **solidified into a static full curve at the end of their beat**, so the end state survives replays, skips, and back-navigation.
+- **Interactive slides earn their keep:** at least one meaningful control on the money-shot and application slides, each wired through a single render-from-state function, bound to a visible change and a live readout, and exercised with real events during verification (see `references/interactivity.md`). A deck whose only interaction is pressing → is a storyboard, not an interactive explainer.
 - Report honestly: what was verified (with evidence - screenshots, probe output) and what wasn't (e.g., "I can't hear the music; levels are measurably correct, give it an ear check").

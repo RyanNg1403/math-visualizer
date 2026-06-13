@@ -2,6 +2,8 @@
 
 This file captures the judgment calls, not the mechanics. When in doubt, decisions here outrank convenience.
 
+Every principle below is **subject-agnostic** — it holds for a physics trajectory, a titration curve, a sorting array, or a population model just as well as for a derivative. Where an example names a math object, read it as a stand-in for your subject's equivalent (the "curve" is whatever you're plotting; the "money shot" is whichever single animation carries *your* concept).
+
 ## Pedagogy
 
 - **Concrete before abstract, always.** Open with a physical scenario the viewer already understands (a car driving, a ball rolling) and *earn* the formalism. The defining equation appears only after the viewer has watched every part of it happen on screen — then the formula reads as a transcript of what they saw, not as new material.
