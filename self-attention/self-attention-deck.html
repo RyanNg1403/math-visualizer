@@ -393,6 +393,27 @@ const slides = [
     const defs = htm(c.ov, 'pill', {right:'4%', top:'13%', opacity:0},
       `<span class="y">query</span>: what this word seeks<br><span class="bl">key</span>: what another word offers`);
     c.refs = {toks, q, k1, k2, b1, b2, score1, score2, defs};
+    const yQ = 136;
+    const rebuild = (path, a, b, bend) => {
+      const ay = a.y - a.h/2 - 2, by = b.y - b.h/2 - 2, mx = (a.x + b.x) / 2;
+      path.setAttribute('d', `M ${a.x} ${ay} C ${mx} ${ay+bend}, ${mx} ${by+bend}, ${b.x} ${by}`);
+    };
+    c.update = () => {
+      const lean = clamp((q.x - k1.x) / (k2.x - k1.x), 0, 1);
+      const sA = lerp(2.6, 0.5, lean), sS = lerp(0.5, 2.6, lean);
+      rebuild(b1, q, k1, -46); rebuild(b2, q, k2, -46);
+      b1.setAttribute('stroke-width', 2 + 3.2*sA); b2.setAttribute('stroke-width', 2 + 3.2*sS);
+      b1.setAttribute('opacity', .9); b2.setAttribute('opacity', .9);
+      score1.innerHTML = `<span class="lab">q&middot;k(animal)</span> = <span class="bl">${fmt(sA)}</span>`;
+      score2.innerHTML = `<span class="lab">q&middot;k(street)</span> = <span class="g">${fmt(sS)}</span>`;
+    };
+    c.enableDrag = () => {
+      draggable(q.g, c.svg, p => {
+        q.x = clamp(p.x, k1.x - 20, k2.x + 20);
+        q.g.setAttribute('transform', `translate(${q.x},${yQ})`);
+        c.update();
+      });
+    };
   },
   beats: [
     async c => {
@@ -406,6 +427,12 @@ const slides = [
       await Promise.all([fadeIn(c.refs.k1.g, 500, 0), fadeIn(c.refs.k2.g, 500, 0)]);
       await Promise.all([drawOn(c.refs.b1, 800), drawOn(c.refs.b2, 800)]);
       await Promise.all([fadeInHtml(c.refs.score1), fadeInHtml(c.refs.score2)]);
+    },
+    async c => {
+      c.update();
+      c.enableDrag();
+      c.say(`<b>Drag the query</b> left or right — watch the two scores trade off.`);
+      await wait(200);
     },
   ],
 },
@@ -425,13 +452,14 @@ const slides = [
     const eq = htm(c.ov, 'eq', {right:'5%', top:'62%', opacity:0}, '');
     tex(eq, String.raw`\text{weights}=\operatorname{softmax}(\text{scores})`);
     const ctrl = htm(c.ov, 'ctrl ui', {left:'50%', bottom:'8%', transform:'translateX(-50%)'},
-      `<span>context</span><input type="range" min="0" max="1" step="0.01" value="0"><span class="val"></span>`);
-    c.refs = {bAnimal, bStreet, scoreAnimal, scoreStreet, animalMeter, streetMeter, eq, ctrl, mix:0};
+      `<span>context</span><input class="kctx" type="range" min="0" max="1" step="0.01" value="0"><span class="val"></span>
+       <span>temperature</span><input class="ktemp" type="range" min="0.3" max="3" step="0.05" value="1"><span class="val vtemp">&tau;=1.0</span>`);
+    c.refs = {bAnimal, bStreet, scoreAnimal, scoreStreet, animalMeter, streetMeter, eq, ctrl, mix:0, temp:1};
     c.update = () => {
       const m = c.refs.mix;
       const sAnimal = lerp(2.4, .55, m);
       const sStreet = lerp(.65, 2.45, m);
-      const [wA, wS] = softmax2(sAnimal, sStreet);
+      const [wA, wS] = softmax2(sAnimal/c.refs.temp, sStreet/c.refs.temp);
       bAnimal.setAttribute('stroke-width', 2 + 10*wA);
       bStreet.setAttribute('stroke-width', 2 + 10*wS);
       bAnimal.setAttribute('opacity', .25 + .75*wA);
@@ -442,9 +470,14 @@ const slides = [
       streetMeter.querySelector('span').style.width = `${wS*100}%`;
       streetMeter.querySelector('span').style.background = 'var(--green)';
       ctrl.querySelector('.val').textContent = m < .5 ? 'too tired' : 'too wide';
+      ctrl.querySelector('.vtemp').textContent = `τ=${fmt(c.refs.temp,1)}${c.refs.temp<0.8?' sharp':c.refs.temp>1.5?' soft':''}`;
     };
-    ctrl.querySelector('input').addEventListener('input', e => {
+    ctrl.querySelector('.kctx').addEventListener('input', e => {
       c.refs.mix = parseFloat(e.target.value);
+      c.update();
+    });
+    ctrl.querySelector('.ktemp').addEventListener('input', e => {
+      c.refs.temp = parseFloat(e.target.value);
       c.update();
     });
     c.update();
@@ -481,6 +514,18 @@ const slides = [
     const eq = htm(c.ov, 'eq', {right:'5%', top:'56%', opacity:0}, '');
     tex(eq, String.raw`\text{new meaning}=\sum_i w_i\,\text{value}_i`);
     c.refs = {left,right,center,v1,v2,vc,b1,b2,pred,eq};
+    const ctrl = htm(c.ov, 'ctrl ui', {left:'50%', bottom:'7%', transform:'translateX(-50%)', opacity:0},
+      `<span>weight</span><input type="range" min="0" max="1" step="0.01" value="0"><span class="val">leans animal</span>`);
+    c.refs.ctrl = ctrl; c.refs.blend = 0;
+    c.update = () => {
+      const t = c.refs.blend;
+      c.refs.b1.setAttribute('stroke-width', lerp(8, 4, t));
+      c.refs.b2.setAttribute('stroke-width', lerp(4, 8, t));
+      c.refs.b1.setAttribute('opacity', lerp(.9, .4, t));
+      c.refs.b2.setAttribute('opacity', lerp(.4, .9, t));
+      c.refs.pred.innerHTML = `<span class="lab">next word</span><br><span class="bl">tired</span> ${fmt(lerp(.72,.12,t))}<br><span class="g">wide</span> ${fmt(lerp(.11,.70,t))}`;
+      ctrl.querySelector('.val').textContent = t < .4 ? 'leans animal' : t > .6 ? 'leans street' : 'balanced';
+    };
   },
   beats: [
     async c => {
@@ -494,14 +539,10 @@ const slides = [
       await fadeInHtml(c.refs.pred);
     },
     async c => {
-      c.say(`Change the context, and the prediction becomes precise in a different direction.`);
-      await tween({dur:2600, ease:'inOutSine', update: t => {
-        c.refs.b1.setAttribute('stroke-width', lerp(8, 4, t));
-        c.refs.b2.setAttribute('stroke-width', lerp(4, 8, t));
-        c.refs.b1.setAttribute('opacity', lerp(.9, .4, t));
-        c.refs.b2.setAttribute('opacity', lerp(.4, .9, t));
-        c.refs.pred.innerHTML = `<span class="lab">next word</span><br><span class="bl">tired</span> ${fmt(lerp(.72,.12,t))}<br><span class="g">wide</span> ${fmt(lerp(.11,.70,t))}`;
-      }});
+      c.say(`Now <b>drag the weight</b> yourself — the mixture, and the prediction, follow.`);
+      await fadeInHtml(c.refs.ctrl);
+      c.refs.ctrl.querySelector('input').addEventListener('input', e => { c.refs.blend = parseFloat(e.target.value); c.update(); });
+      await wait(200);
     },
   ],
 },
