@@ -321,6 +321,13 @@
     overflow: hidden;
   }
 
+  .lesson-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
   .video-stage {
     background: var(--surface-3);
     padding: 12px;
@@ -532,6 +539,23 @@
     background: transparent;
     border: 1px solid var(--line);
     color: var(--text);
+  }
+
+  .secondary-link {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--text);
+    display: inline-flex;
+    min-height: 40px;
+    padding: 0 14px;
+    text-decoration: none;
+  }
+
+  .secondary-link:hover {
+    border-color: var(--brand);
+    color: var(--brand);
   }
 
   .composer-wrap {

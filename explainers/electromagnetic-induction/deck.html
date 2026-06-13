@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Electromagnetic Induction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,650;1,9..144,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+:root{
+  --bg:#0b0e15;--panel:#121826;--ink:#e9e7df;--muted:#b9c0d2;--dim:#7d869c;
+  --blue:#58c4dd;--yellow:#ffd45e;--green:#7fd483;--red:#ff6f61;--purple:#c792ea;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Fraunces",Georgia,serif;overflow:hidden}
+#deck{position:fixed;inset:0 0 58px 0}
+body.video-mode #deck{inset:0}
+body.video-mode .hud{display:none}
+.grain{position:fixed;inset:0;pointer-events:none;background:
+  radial-gradient(circle at 20% 20%,rgba(88,196,221,.06),transparent 30%),
+  radial-gradient(circle at 75% 15%,rgba(199,146,234,.05),transparent 30%),
+  radial-gradient(circle at 50% 80%,rgba(255,212,94,.04),transparent 38%);
+  opacity:.9}
+.slide{position:absolute;inset:0;padding:54px 64px 46px;display:grid;grid-template-rows:auto 1fr auto;opacity:0;pointer-events:none;transition:opacity .35s}
+.slide.active{opacity:1;pointer-events:auto}
+.kicker{display:none}
+.title{font-size:42px;line-height:1.05;font-weight:650;letter-spacing:0;margin:10px 0 8px}
+.stage{position:relative;min-height:0;border-radius:0}
+svg{width:100%;height:100%;display:block;overflow:visible}
+.caption{min-height:46px;text-align:center;font-style:italic;color:var(--muted);font-size:27px;line-height:1.25}
+.caption span.y{color:var(--yellow)}.caption span.b{color:var(--blue)}.caption span.g{color:var(--green)}.caption span.r{color:var(--red)}.caption span.p{color:var(--purple)}
+.overlay{position:absolute;inset:0;pointer-events:none}
+.titlebox{position:absolute;left:0;right:0;top:7%;text-align:center;pointer-events:none}
+.titlebox .over{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.3em;color:var(--dim);text-transform:uppercase}
+.titlebox h1{font-family:"Fraunces",Georgia,serif;font-weight:300;font-size:clamp(46px,7vw,82px);line-height:1;margin-top:12px}
+.titlebox h1 em{font-style:italic;font-weight:650;color:var(--ink)}
+.titlebox .sub{margin-top:14px;color:#aab1c4;font-size:17px}
+.pill,.eq,.control{position:absolute;background:rgba(18,24,38,.78);border:1px solid rgba(233,231,223,.1);box-shadow:0 14px 40px rgba(0,0,0,.25);border-radius:8px;padding:12px 16px;font-family:"IBM Plex Mono",monospace;color:var(--ink)}
+.eq{font-family:"Fraunces",Georgia,serif}
+.eq .katex{font-size:1.18em}
+.control{pointer-events:auto;width:320px}
+.control label{display:flex;justify-content:space-between;gap:18px;font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.12em}
+input[type=range]{width:100%;accent-color:var(--yellow)}
+.hud{position:fixed;left:0;right:0;bottom:0;height:58px;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 28px;border-top:1px solid #1d2335;background:linear-gradient(#0b0e1500,#0b0e15f2 38%);font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--dim)}
+.hud-c{display:flex;align-items:center;gap:10px}
+.hud button{background:none;border:1px solid #2a3147;color:var(--ink);height:31px;min-width:31px;border-radius:7px;cursor:pointer;font-size:14px;line-height:1;padding:0 9px}
+.hud button:hover{border-color:var(--yellow);color:var(--yellow)}
+.hud .tag{letter-spacing:.1em;text-transform:uppercase}
+kbd{border:1px solid #2a3147;border-radius:4px;padding:1px 5px;font-size:10.5px;font-family:inherit;color:#9aa2b6;margin-left:4px}
+.read{font-family:"IBM Plex Mono",monospace;font-size:18px;fill:var(--ink)}
+.lab{font-family:"IBM Plex Mono",monospace;font-size:14px;fill:var(--dim);letter-spacing:.05em}
+.axis,.grid{stroke:#384158;stroke-width:1.2}.axis{stroke:#5a6378;stroke-width:2.5}
+.curve{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:6}
+.thin{stroke-width:3.5}.dash{stroke-dasharray:8 9}.blue{stroke:var(--blue)}.yellow{stroke:var(--yellow)}.green{stroke:var(--green)}.red{stroke:var(--red)}.purple{stroke:var(--purple)}
+.fill-blue{fill:var(--blue)}.fill-yellow{fill:var(--yellow)}.fill-green{fill:var(--green)}.fill-red{fill:var(--red)}.fill-purple{fill:var(--purple)}
+.txt{font-family:"IBM Plex Mono",monospace;font-size:15px;fill:var(--muted)}
+.big{font-size:30px}.mono{font-family:"IBM Plex Mono",monospace}
+.card{fill:rgba(18,24,38,.74);stroke:rgba(233,231,223,.12);stroke-width:1.2}
+.field{stroke:var(--blue);stroke-width:2.5;fill:none;opacity:.62}
+.current{stroke:var(--yellow);stroke-width:5;fill:none;stroke-linecap:round}
+.induced{stroke:var(--yellow);stroke-width:3.2;fill:none;stroke-dasharray:10 10;opacity:.86}
+.magN{fill:#cd4e62}.magS{fill:#3f6ee8}.metal{fill:#c8d2df}.coil{stroke:#d6dde9;stroke-width:4;fill:none}.wire{stroke:#8b93a7;stroke-width:4;fill:none}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div id="deck"></div>
+<div class="hud">
+  <div class="tag">html · svg · katex - electromagnetic induction</div>
+  <div class="hud-c">
+    <button id="bPrev" type="button" aria-label="previous">←</button>
+    <button id="bReplay" type="button" aria-label="replay">r</button>
+    <button id="bNext" type="button" aria-label="next">→</button>
+  </div>
+  <div><span id="counter">01 / 10</span><kbd>←</kbd><kbd>→</kbd><kbd>r</kbd></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script>
+const QUERY=new URLSearchParams(location.search);
+const VIDEO_MODE=QUERY.has('video')||QUERY.has('clean');
+if(VIDEO_MODE)document.body.classList.add('video-mode');
+const EASE={
+  linear:t=>t,
+  inOut:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,
+  out:t=>1-Math.pow(1-t,3),
+  back:t=>1+2.2*Math.pow(t-1,3)+1.2*Math.pow(t-1,2)
+};
+const activeTweens=new Set();
+function tween({dur=800,ease='inOut',update=()=>{}}){
+  return new Promise(res=>{
+    const E=EASE[ease]||EASE.inOut; const tw={}; let raf,start;
+    tw.finish=()=>{cancelAnimationFrame(raf);activeTweens.delete(tw);update(1);res();};
+    const frame=now=>{if(start===undefined)start=now; const p=Math.min((now-start)/dur,1); update(E(p)); if(p<1)raf=requestAnimationFrame(frame); else{activeTweens.delete(tw);res();}};
+    activeTweens.add(tw); raf=requestAnimationFrame(frame);
+  });
+}
+const flushTweens=()=>[...activeTweens].forEach(t=>t.finish());
+const wait=ms=>tween({dur:ms,ease:'linear'});
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const fmt=(n,d=2)=>Number(n).toFixed(d);
+const fluxFromMagnet=x=>1.2/(1+Math.exp(2.2*(x-.2)));
+const emfFromMotion=(x,v)=>-v*2.64*fluxFromMagnet(x)*(1-fluxFromMagnet(x)/1.2);
+const fluxAngle=theta=>Math.cos(theta);
+const emfAngle=theta=>Math.sin(theta);
+const motionalEmf=(B,ell,v)=>B*ell*v;
+const NS='http://www.w3.org/2000/svg';
+function el(name,attrs={},parent=null){const n=document.createElementNS(NS,name);for(const k in attrs)n.setAttribute(k,attrs[k]);if(parent)parent.appendChild(n);return n;}
+function htm(parent,cls,css={},inner=''){const d=document.createElement('div');d.className=cls;Object.assign(d.style,css);d.innerHTML=inner;parent.appendChild(d);return d;}
+function tex(node,s){try{katex.render(s,node,{throwOnError:false,strict:false,displayMode:false});}catch(e){node.textContent=s;console.error(e);}}
+function drawOn(path,dur=900,ease='inOut'){path.style.visibility='visible';const L=path.getTotalLength?path.getTotalLength():400;path.style.strokeDasharray=L;path.style.strokeDashoffset=L;return tween({dur,ease,update:t=>{path.style.strokeDashoffset=L*(1-t);if(t===1){path.style.strokeDasharray='';path.style.strokeDashoffset='';}}});}
+function fade(node,dur=500,to=1){
+  return tween({dur,update:t=>{
+    if(node.setAttribute) node.setAttribute('opacity',String(to*t));
+    else node.style.opacity=String(to*t);
+  }});
+}
+function setOpacity(nodes,v){nodes.flat().forEach(n=>{if(!n)return;if(n.setAttribute)n.setAttribute('opacity',String(v));else n.style.opacity=String(v);});}
+function makeGraph(svg,o){
+  const g=el('g',{},svg),grid=el('g',{opacity:.45},g),layer=el('g',{},g);
+  const X=u=>o.left+(u-o.x[0])/(o.x[1]-o.x[0])*o.w;
+  const Y=v=>o.top+o.h-(v-o.y[0])/(o.y[1]-o.y[0])*o.h;
+  (o.xticks||[]).forEach(u=>{el('line',{x1:X(u),y1:Y(o.y[0]),x2:X(u),y2:Y(o.y[1]),class:'grid'},grid);});
+  (o.yticks||[]).forEach(v=>{el('line',{x1:X(o.x[0]),y1:Y(v),x2:X(o.x[1]),y2:Y(v),class:'grid'},grid);});
+  el('line',{x1:X(o.x[0]),y1:Y(0),x2:X(o.x[1]),y2:Y(0),class:'axis'},g);
+  el('line',{x1:X(0),y1:Y(o.y[0]),x2:X(0),y2:Y(o.y[1]),class:'axis'},g);
+  const pathD=(f,a,b,n=160)=>{let d='';for(let i=0;i<=n;i++){const x=a+(b-a)*i/n,y=f(x);d+=(i?' L ':'M ')+X(x)+' '+Y(y);}return d;};
+  return {g,layer,X,Y,pathD,fn:(f,a,b,cls,n)=>el('path',{d:pathD(f,a,b,n),class:'curve '+cls,opacity:0},layer)};
+}
+function makeStage(c){
+  c.root.innerHTML='';
+  const k=document.createElement('div');k.className='kicker';k.textContent=c.slide.kicker;c.root.appendChild(k);
+  const title=document.createElement('div');title.className='title';title.innerHTML=c.slide.title;c.root.appendChild(title);
+  const stage=document.createElement('div');stage.className='stage';c.root.appendChild(stage);
+  const svg=el('svg',{viewBox:'0 0 1000 560'},stage);const ov=document.createElement('div');ov.className='overlay';stage.appendChild(ov);
+  const cap=document.createElement('div');cap.className='caption';cap.innerHTML=c.slide.caption||'';c.root.appendChild(cap);
+  c.svg=svg;c.ov=ov;c.cap=cap;c.refs={};
+  c.say=html=>tween({dur:250,update:t=>cap.style.opacity=1-t}).then(()=>{cap.innerHTML=html;return tween({dur:420,update:t=>cap.style.opacity=t});});
+}
+function coil(svg,cx,cy,scale=1){
+  const g=el('g',{transform:`translate(${cx} ${cy}) scale(${scale})`},svg);
+  for(let i=-2;i<=2;i++)el('ellipse',{cx:i*17,cy:0,rx:20,ry:82,class:'coil'},g);
+  el('path',{d:'M -116 0 C -170 0 -170 110 -70 110 L 70 110 C 170 110 170 0 116 0',class:'wire'},g);
+  return g;
+}
+function magnet(svg,x,y,scale=1){
+  const g=el('g',{transform:`translate(${x} ${y}) scale(${scale})`},svg);
+  el('rect',{x:-95,y:-34,width:95,height:68,rx:8,class:'magN'},g);
+  el('rect',{x:0,y:-34,width:95,height:68,rx:8,class:'magS'},g);
+  const n=el('text',{x:-48,y:10,'text-anchor':'middle',class:'txt big',fill:'#fff'},g);n.textContent='N';
+  const s=el('text',{x:48,y:10,'text-anchor':'middle',class:'txt big',fill:'#fff'},g);s.textContent='S';
+  return g;
+}
+function fieldLines(svg,x0,x1,y0,dy,count,cls='field',parent=svg){
+  const lines=[];for(let i=0;i<count;i++){const y=y0+(i-(count-1)/2)*dy;lines.push(el('path',{d:`M ${x0} ${y} C ${lerp(x0,x1,.35)} ${y-25} ${lerp(x0,x1,.65)} ${y+25} ${x1} ${y}`,class:cls,opacity:0},parent));}
+  return lines;
+}
+function arrowMarker(svg,id,color){
+  const defs=svg.querySelector('defs')||el('defs',{},svg);const m=el('marker',{id,markerWidth:10,markerHeight:10,refX:8,refY:3,orient:'auto',markerUnits:'strokeWidth'},defs);
+  el('path',{d:'M0,0 L0,6 L9,3 z',fill:color},m);return `url(#${id})`;
+}
+function currentRing(svg,cx,cy,dir=1){
+  const g=el('g',{opacity:0},svg);const marker=arrowMarker(svg,'arr'+Math.random().toString(16).slice(2),'#ffd45e');
+  const d=dir>0?`M ${cx-76} ${cy} A 76 76 0 1 1 ${cx+76} ${cy}`:`M ${cx+76} ${cy} A 76 76 0 1 0 ${cx-76} ${cy}`;
+  el('path',{d,class:'current',fill:'none','marker-end':marker},g);
+  return g;
+}
+function fluxMeter(parent,label,x,y){
+  const g=el('g',{transform:`translate(${x} ${y})`,opacity:0},parent);
+  el('rect',{x:0,y:0,width:250,height:28,rx:7,fill:'#111827',stroke:'#30384d'},g);
+  const fill=el('rect',{x:2,y:2,width:0,height:24,rx:6,fill:'#58c4dd'},g);
+  const t=el('text',{x:0,y:-12,class:'lab'},g);t.textContent=label;
+  const val=el('text',{x:260,y:21,class:'txt'},g);val.textContent='0.00 Wb';
+  return {g,fill,val,set:v=>{fill.setAttribute('width',String(clamp(v/1.2,0,1)*246));val.textContent=fmt(v)+' Wb';}};
+}
+function setupMagnetCoil(c,opts={}){
+  const svg=c.svg;
+  const B=fieldLines(svg,170,820,205,38,6);const mag=magnet(svg,270,280,.95);const co=coil(svg,620,280,1);const ring=currentRing(svg,620,280,opts.dir||1);
+  const meter=fluxMeter(svg,'magnetic flux through coil',80,68);
+  const needle=el('g',{transform:'translate(855 405)'},svg);el('circle',{cx:0,cy:0,r:58,fill:'#101623',stroke:'#3b455e'},needle);el('line',{x1:0,y1:0,x2:0,y2:-42,stroke:'#ffd45e','stroke-width':5,'stroke-linecap':'round'},needle);const nt=el('text',{x:0,y:78,'text-anchor':'middle',class:'txt'},needle);nt.textContent='galvanometer';
+  c.refs={B,mag,co,ring,meter,needle};
+  return c.refs;
+}
+function graphPulse(c){
+  const G=makeGraph(c.svg,{x:[0,10],y:[-1.4,1.4],left:120,top:70,w:760,h:350,xticks:[0,2,4,6,8,10],yticks:[-1,0,1]});
+  const slow=G.fn(x=>.48*Math.exp(-Math.pow(x-4.8,2)/2.6)-.38*Math.exp(-Math.pow(x-7.2,2)/2.6),0,10,'purple');
+  const fast=G.fn(x=>1.1*Math.exp(-Math.pow(x-4.8,2)/.65)-.88*Math.exp(-Math.pow(x-7.2,2)/.65),0,10,'red');
+  const lab=el('text',{x:G.X(6.1),y:G.Y(1.15),class:'txt',opacity:0},G.layer);lab.textContent='faster motion makes a taller emf pulse';
+  return {G,slow,fast,lab};
+}
+const slides=[
+{kicker:'math visualizer · physics 01',title:'',caption:'Changing flux is blue. The voltage it creates is yellow.',setup:c=>{makeStage(c);htm(c.ov,'titlebox',{},`<div class="over">a visual introduction · no advanced calculus required</div><h1>Electromagnetic <em>Induction</em></h1><div class="sub">how changing magnetic flux wakes a circuit</div>`);const G=makeGraph(c.svg,{x:[0,6.3],y:[-1.35,1.35],left:160,top:292,w:690,h:170,xticks:[],yticks:[]});const flux=G.fn(Math.cos,0,6.28,'blue',220);const emf=G.fn(Math.sin,0,6.28,'yellow',220);const pt=el('circle',{r:7,class:'fill-yellow',opacity:0},G.layer);const eq=htm(c.ov,'eq',{left:'50%',bottom:'72px',transform:'translateX(-50%)',opacity:0},'');tex(eq,'\\mathcal{E}=-N\\,d\\Phi_B/dt');c.refs={G,flux,emf,pt,eq};},beats:[
+ async c=>{const{flux,emf,pt,G}=c.refs;flux.setAttribute('opacity',1);await drawOn(flux,1300);emf.setAttribute('opacity',1);await drawOn(emf,1100);pt.setAttribute('opacity',1);await tween({dur:1500,ease:'inOut',update:t=>{const x=lerp(.25,6.05,t),y=Math.sin(x);pt.setAttribute('cx',G.X(x));pt.setAttribute('cy',G.Y(y));}});await c.say('A changing <span class="b">flux</span> leaves a circulating electric push behind.');},
+ async c=>{await tween({dur:650,update:t=>c.refs.eq.style.opacity=t});await c.say('Faraday gives the size. Lenz gives the direction.');}
+]},
+{kicker:'02 · flux is the count',title:'Flux is the field that actually threads the loop',caption:'Do not ask only how strong the field is. Ask how much of it crosses the loop.',setup:c=>{makeStage(c);const svg=c.svg;fieldLines(svg,95,865,160,38,8).forEach((p,i)=>{p.setAttribute('opacity',i>1&&i<6?.85:.18)});coil(svg,500,280,1.15);const meter=fluxMeter(svg,'magnetic flux',92,82);meter.g.setAttribute('opacity',1);meter.set(.92);const eq=htm(c.ov,'eq',{right:'86px',bottom:'92px'},'');tex(eq,'\\Phi_B = BA\\cos\\theta');c.refs={meter,eq};},beats:[
+ async c=>{await c.say('The loop cares about <span class="b">field strength</span>, area, and angle.');},
+ async c=>{await c.say('That count is magnetic flux: field lines through a chosen surface.');await tween({dur:1000,update:t=>c.refs.meter.set(lerp(.2,1.08,t))});},
+ async c=>{await c.say('Change any knob -- B, A, or theta -- and the count starts moving.');}
+]},
+{kicker:'03 · speed controls the spike',title:'The same change can whisper or shout',caption:'Same path. Different speed. Different induced emf.',setup:c=>{makeStage(c);const g=graphPulse(c);const ctrl=htm(c.ov,'control',{left:'110px',bottom:'72px'},'<label><span>magnet speed</span><b data-speed-read>1.00x</b></label><input type="range" min="0.25" max="2.5" step="0.01" value="1.0" data-control="magnet-speed">');const read=ctrl.querySelector('[data-speed-read]');const input=ctrl.querySelector('input');input.addEventListener('input',()=>{read.textContent=Number(input.value).toFixed(2)+'x';g.lab.textContent='speed = '+Number(input.value).toFixed(2)+'x: faster flux change gives a taller emf pulse';g.lab.setAttribute('opacity',1);});c.refs={...g,ctrl,input};},beats:[
+ async c=>{await c.say('Slow motion spreads the flux change over time.');c.refs.slow.setAttribute('opacity',1);await drawOn(c.refs.slow,1400);},
+ async c=>{await c.say('Fast motion compresses the same change into a taller voltage pulse.');c.refs.fast.setAttribute('opacity',1);await drawOn(c.refs.fast,1100);await fade(c.refs.lab,500);},
+ async c=>{await c.say('Faraday measures a rate: <span class="p">how fast flux changes</span>.');}
+]},
+{kicker:'04 · the coil fights the change',title:'The coil does not oppose the magnet. It opposes the change.',caption:'This is the Lenz-law move.',setup:c=>{makeStage(c);const r=setupMagnetCoil(c,{dir:1});const induced=fieldLines(c.svg,710,515,218,35,4,'induced');const ctrl=htm(c.ov,'control',{left:'92px',bottom:'62px'},'<label><span>magnet position</span><b data-pos-read>1.80</b></label><input type="range" min="-2.5" max="2.5" step="0.01" value="1.8" data-control="magnet-position">');const read=ctrl.querySelector('[data-pos-read]');const input=ctrl.querySelector('input');const update=()=>{const x=Number(input.value);read.textContent=fmt(x);const sx=lerp(500,250,(x+2.5)/5);r.mag.setAttribute('transform',`translate(${sx} 280) scale(.95)`);r.meter.set(fluxFromMagnet(x));};input.addEventListener('input',update);update();c.refs={...r,induced,ctrl,input};},beats:[
+ async c=>{await Promise.all(c.refs.B.map(p=>drawOn(p,600)));await fade(c.refs.meter.g,400);await c.say('As the north pole approaches, flux through the loop rises.');},
+ async c=>{await tween({dur:2200,ease:'out',update:t=>{const x=lerp(1.8,-.35,t);c.refs.input.value=x;c.refs.input.dispatchEvent(new Event('input',{bubbles:true}));}});},
+ async c=>{await c.say('The induced current makes its own field <span class="y">against the increase</span>.');await fade(c.refs.ring,500);await Promise.all(c.refs.induced.map(p=>drawOn(p,900)));}
+]},
+{kicker:'05 · pull away and reverse',title:'Reverse the change, and the current reverses too',caption:'The sign is not a convention. It is a response.',setup:c=>{makeStage(c);const r=setupMagnetCoil(c,{dir:-1});r.mag.setAttribute('transform','translate(475 280) scale(.95)');r.meter.set(1.06);const ring2=currentRing(c.svg,620,280,-1);c.refs={...r,ring2};},beats:[
+ async c=>{await c.say('When the magnet leaves, the original flux starts disappearing.');await Promise.all(c.refs.B.map(p=>drawOn(p,600)));await fade(c.refs.meter.g,400);},
+ async c=>{await tween({dur:1800,ease:'out',update:t=>{c.refs.mag.setAttribute('transform',`translate(${lerp(475,275,t)} 280) scale(.95)`);c.refs.meter.set(lerp(1.06,.24,t));}});},
+ async c=>{await c.say('Now the circuit reinforces the fading flux, so the current flips direction.');await fade(c.refs.ring2,500);}
+]},
+{kicker:'06 · the law arrives',title:'Now the equation is just a transcript of the movie',caption:'Every symbol has already appeared on screen.',setup:c=>{makeStage(c);const eq=htm(c.ov,'eq',{left:'50%',top:'42%',transform:'translate(-50%,-50%)',padding:'28px 34px'},'');tex(eq,'\\mathcal{E}=-N\\frac{d\\Phi_B}{dt}');eq.style.opacity=0;const notes=[['N','number of turns',245,355],['flux-change rate','how fast flux changes',430,355],['-','Lenz: oppose the change',650,355]];const gs=[];notes.forEach(([a,b,x,y])=>{const g=el('g',{opacity:0},c.svg);const t=el('text',{x,y,class:'txt big','text-anchor':'middle'},g);t.textContent=a;const s=el('text',{x,y:Number(y)+34,class:'txt','text-anchor':'middle'},g);s.textContent=b;gs.push(g);});c.refs={eq,gs};},beats:[
+ async c=>{await c.say('The size comes from how fast flux changes.');await tween({dur:600,update:t=>c.refs.eq.style.opacity=t});},
+ async c=>{await c.say('More turns multiply the effect.');await fade(c.refs.gs[0],400);},
+ async c=>{await c.say('The minus sign is the visual rule we just watched.');await Promise.all([fade(c.refs.gs[1],400),fade(c.refs.gs[2],400)]);}
+]},
+{kicker:'07 · motional emf',title:'A moving wire is another way to change flux',caption:'Motion can change area, even when B stays constant.',setup:c=>{makeStage(c);const svg=c.svg;const B=fieldLines(svg,130,860,135,34,9);B.forEach(p=>p.setAttribute('opacity',.35));const rail1=el('line',{x1:190,y1:210,x2:790,y2:210,class:'wire'},svg),rail2=el('line',{x1:190,y1:370,x2:790,y2:370,class:'wire'},svg);const rod=el('rect',{x:270,y:195,width:26,height:190,rx:6,class:'metal'},svg);const area=el('rect',{x:190,y:210,width:93,height:160,fill:'rgba(88,196,221,.12)',stroke:'#58c4dd',opacity:0},svg);const eq=htm(c.ov,'eq',{right:'100px',bottom:'92px'},'');tex(eq,'\\mathcal{E}=B\\ell v');eq.style.opacity=0;c.refs={B,rod,area,eq};},beats:[
+ async c=>{await c.say('Pull the rod rightward, and the circuit encloses more field.');await Promise.all(c.refs.B.map(p=>drawOn(p,500)));},
+ async c=>{await tween({dur:1800,ease:'out',update:t=>{const x=lerp(270,610,t);c.refs.rod.setAttribute('x',x);c.refs.area.setAttribute('width',x-190+13);c.refs.area.setAttribute('opacity',.95*t);}});},
+ async c=>{await c.say('For this geometry, Faraday collapses to <span class="y">B ell v</span>.');await tween({dur:500,update:t=>c.refs.eq.style.opacity=t});}
+]},
+{kicker:'08 · generator',title:'Rotate the loop, and flux becomes a wave',caption:'A generator is a flux machine with a crank.',setup:c=>{makeStage(c);const G1=makeGraph(c.svg,{x:[0,6.3],y:[-1.2,1.2],left:90,top:70,w:360,h:230,xticks:[0,3.14,6.28],yticks:[-1,0,1]});const G2=makeGraph(c.svg,{x:[0,6.3],y:[-1.2,1.2],left:550,top:70,w:360,h:230,xticks:[0,3.14,6.28],yticks:[-1,0,1]});const flux=G1.fn(Math.cos,0,6.28,'blue'),emf=G2.fn(Math.sin,0,6.28,'purple');const rotor=el('g',{transform:'translate(500 398)'},c.svg);el('ellipse',{cx:0,cy:0,rx:118,ry:36,stroke:'#d6dde9','stroke-width':5,fill:'none'},rotor);el('line',{x1:-140,y1:0,x2:140,y2:0,class:'axis'},rotor);const ctrl=htm(c.ov,'control',{left:'340px',bottom:'45px'},'<label><span>coil angle</span><b data-angle-read>0.00 rad</b></label><input type="range" min="0" max="6.283" step="0.001" value="0" data-control="coil-angle">');const read=ctrl.querySelector('[data-angle-read]');const input=ctrl.querySelector('input');const update=()=>{const th=Number(input.value);read.textContent=fmt(th)+' rad';rotor.setAttribute('transform',`translate(500 398) rotate(${th*180/Math.PI})`);};input.addEventListener('input',update);update();c.refs={flux,emf,rotor,input};},beats:[
+ async c=>{await c.say('The flux through a rotating loop follows a cosine.');c.refs.flux.setAttribute('opacity',1);await drawOn(c.refs.flux,1300);},
+ async c=>{await c.say('The induced emf is shifted: it peaks when flux changes fastest.');c.refs.emf.setAttribute('opacity',1);await drawOn(c.refs.emf,1300);},
+ async c=>{await tween({dur:2400,ease:'linear',update:t=>{c.refs.input.value=String(2*Math.PI*t);c.refs.input.dispatchEvent(new Event('input',{bubbles:true}));}});}
+]},
+{kicker:'09 · transformer and eddies',title:'Guided induction powers grids. Unguided induction wastes heat.',caption:'Same law, very different outcomes.',setup:c=>{makeStage(c);const svg=c.svg;el('rect',{x:265,y:135,width:470,height:250,rx:18,fill:'none',stroke:'#69718a','stroke-width':28},svg);for(let i=0;i<7;i++){el('ellipse',{cx:260,cy:170+i*28,rx:38,ry:15,class:'coil'},svg);el('ellipse',{cx:740,cy:156+i*22,rx:38,ry:13,class:'coil'},svg);}const flux=fieldLines(svg,320,690,210,28,5,'field');const plate=el('rect',{x:390,y:430,width:190,height:70,rx:8,class:'metal',opacity:0},svg);const eddy1=el('path',{d:'M440 465 a28 20 0 1 1 1 0',class:'current',opacity:0},svg);const eddy2=el('path',{d:'M525 465 a28 20 0 1 0 1 0',class:'current',opacity:0},svg);c.refs={flux,plate,eddy1,eddy2};},beats:[
+ async c=>{await c.say('A transformer guides changing flux through both coils.');await Promise.all(c.refs.flux.map(p=>drawOn(p,800)));},
+ async c=>{await c.say('The secondary does not need contact. It needs shared changing flux.');},
+ async c=>{await c.say('In a solid metal plate, the same law makes loops of current: eddies.');await fade(c.refs.plate,400);await Promise.all([fade(c.refs.eddy1,500),fade(c.refs.eddy2,500)]);}
+]},
+{kicker:'10 · one move, four faces',title:'One law, many machines',caption:'Changing flux makes a circulating electric field; the circuit answers by opposing the change.',setup:c=>{makeStage(c);const items=[['magnet + coil','motion changes flux'],['sliding rod','area changes flux'],['generator','angle changes flux'],['transformer','current changes flux']];items.forEach(([a,b],i)=>{const x=130+(i%2)*410,y=118+Math.floor(i/2)*170;const g=el('g',{opacity:0},c.svg);el('rect',{x,y,width:320,height:115,rx:10,class:'card'},g);const t=el('text',{x:x+22,y:y+45,class:'txt big',fill:'#e9e7df'},g);t.textContent=a;const s=el('text',{x:x+22,y:y+80,class:'txt'},g);s.textContent=b;c.refs['card'+i]=g;});const eq=htm(c.ov,'eq',{left:'50%',bottom:'48px',transform:'translateX(-50%)'},'');tex(eq,'\\Delta\\Phi_B \\longrightarrow \\mathcal{E} \\longrightarrow I \\longrightarrow B_{\\text{opposes change}}');eq.style.opacity=0;c.refs.eq=eq;},beats:[
+ async c=>{await c.say('The examples are not separate tricks.');await fade(c.refs.card0,350);await fade(c.refs.card1,350);},
+ async c=>{await c.say('They are four ways to make flux move.');await fade(c.refs.card2,350);await fade(c.refs.card3,350);},
+ async c=>{await c.say('Faraday gives the size. Lenz gives the direction.');await tween({dur:500,update:t=>c.refs.eq.style.opacity=t});}
+]}
+];
+const deck=document.getElementById('deck');
+const counterEl=document.getElementById('counter');
+let cur=0,beat=-1,ctx=null,playing=false;
+function updateDots(){if(counterEl)counterEl.textContent=String(cur+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0')}
+async function goTo(i,autoplay=true){flushTweens();cur=clamp(i,0,slides.length-1);beat=-1;deck.innerHTML='';const root=document.createElement('section');root.className='slide active';deck.appendChild(root);ctx={root,slide:slides[cur],refs:{}};slides[cur].setup(ctx);updateDots();if(autoplay)await playBeat();}
+async function playBeat(){if(playing){flushTweens();return;}const s=slides[cur];if(beat+1<s.beats.length){beat++;playing=true;try{await s.beats[beat](ctx);}catch(e){console.error('beat error',e);}playing=false;}else if(cur<slides.length-1){await goTo(cur+1,true);}}
+function prev(){goTo(cur-1,true)}
+function replay(){goTo(cur,true)}
+function advance(){if(playing||activeTweens.size){flushTweens();return;}playBeat();}
+document.addEventListener('keydown',e=>{if(['ArrowRight',' ','Enter'].includes(e.key)){e.preventDefault();advance();}if(e.key==='ArrowLeft')prev();if(e.key.toLowerCase()==='r')replay();});
+document.addEventListener('click',e=>{if(e.target.closest('input,button,.control'))return;advance();});
+document.getElementById('bNext')?.addEventListener('click',advance);
+document.getElementById('bPrev')?.addEventListener('click',prev);
+document.getElementById('bReplay')?.addEventListener('click',replay);
+window.__deck={slides,state:()=>({cur,beat,playing}),goTo,playBeat,advance,prev,replay,flushTweens};
+goTo(0,true);
+</script>
+</body>
+</html>
