@@ -49,6 +49,23 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => entities[char]);
 }
 
+function lessonFromLocation(): Explainer | null {
+  const [, hashMode, hashLesson] = window.location.hash.match(/^#([^/]+)\/?(.+)?$/) ?? [];
+
+  if (hashMode === 'interactive' && hashLesson) {
+    const id = decodeURIComponent(hashLesson);
+    return explainers.find((explainer) => explainer.id === id) ?? null;
+  }
+
+  const queryLesson = new URLSearchParams(window.location.search).get('lesson');
+
+  if (queryLesson) {
+    return explainers.find((explainer) => explainer.id === queryLesson) ?? null;
+  }
+
+  return null;
+}
+
 // --- the library (sidebar) is the registry ---
 function renderLibrary(): void {
   lessonList.innerHTML = '';
@@ -111,6 +128,10 @@ function lessonCardHtml(lesson: Explainer): string {
               </button>
             </div>
           </div>
+        </div>
+        <div class="lesson-actions">
+          <button class="primary-action" type="button" data-open-interactive>Interactive explorer</button>
+          <a class="secondary-link" href="${lesson.deck}" target="_blank" rel="noreferrer">Open deck</a>
         </div>
       </div>
     </article>`;
@@ -191,12 +212,24 @@ function setView(view: ViewMode): void {
   const currentPath = `${window.location.pathname}${window.location.search}`;
 
   if (view === 'interactive') {
-    if (currentLesson && loadedDeck !== currentLesson.deck) {
-      deckFrame.src = currentLesson.deck;
-      loadedDeck = currentLesson.deck;
+    if (!currentLesson) {
+      setLessonMeta(lessonFromLocation() ?? explainers[0]);
+      renderLibrary();
     }
-    history.replaceState(null, '', `${currentPath}#interactive`);
+
+    const lesson = currentLesson;
+
+    if (lesson && loadedDeck !== lesson.deck) {
+      deckFrame.src = lesson.deck;
+      loadedDeck = lesson.deck;
+    }
+
+    if (lesson) {
+      history.replaceState(null, '', `${currentPath}#interactive/${lesson.id}`);
+    }
   } else if (window.location.hash === '#interactive') {
+    history.replaceState(null, '', currentPath);
+  } else if (window.location.hash.startsWith('#interactive/')) {
     history.replaceState(null, '', currentPath);
   }
 
@@ -303,4 +336,10 @@ getElement<HTMLButtonElement>('newChatButton').addEventListener('click', () => {
 
 // --- boot ---
 renderHome();
-setView(window.location.hash === '#interactive' ? 'interactive' : 'chat');
+const initialLesson = lessonFromLocation();
+
+if (initialLesson) {
+  showLesson(initialLesson);
+}
+
+setView(window.location.hash.startsWith('#interactive') ? 'interactive' : 'chat');

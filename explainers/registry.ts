@@ -43,6 +43,49 @@ export const explainers: Explainer[] = [
     video: new URL('./taylor/taylor.mp4', import.meta.url).href,
     poster: new URL('./taylor/poster.jpg', import.meta.url).href,
   },
+  {
+    id: 'electromagnetic-induction',
+    title: 'Electromagnetic Induction',
+    blurb: 'Changing magnetic flux wakes a circuit: Faraday gives the size, Lenz gives the direction.',
+    tags: [
+      'physics',
+      'electromagnetism',
+      'induction',
+      'faraday',
+      'lenz',
+      'magnetic flux',
+      'motional emf',
+      'generator',
+      'transformer',
+    ],
+    deck: new URL('./electromagnetic-induction/deck.html', import.meta.url).href,
+    video: new URL(
+      './electromagnetic-induction/electromagnetic-induction.mp4',
+      import.meta.url,
+    ).href,
+    poster: new URL('./electromagnetic-induction/poster.jpg', import.meta.url).href,
+  },
+  {
+    id: 'activation-energy-catalyst',
+    title: 'Activation Energy & Catalyst',
+    blurb:
+      'A 3-D chemistry explainer showing activation barriers, transition states, and how catalysts open a lower-energy pathway.',
+    tags: [
+      'chemistry',
+      'activation energy',
+      'catalyst',
+      'catalysis',
+      'reaction rate',
+      'arrhenius',
+      'transition state',
+    ],
+    deck: new URL('./activation-energy-catalyst/deck.html', import.meta.url).href,
+    video: new URL(
+      './activation-energy-catalyst/activation-energy-catalyst.mp4',
+      import.meta.url,
+    ).href,
+    poster: new URL('./activation-energy-catalyst/poster.jpg', import.meta.url).href,
+  },
 ];
 
 export const getExplainer = (id: string): Explainer | undefined =>
