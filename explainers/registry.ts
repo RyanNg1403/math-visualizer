@@ -95,10 +95,9 @@ export const explainers: Explainer[] = [
     title: 'Self-Attention',
     blurb: 'How a transformer decides which words to look at — queries, keys, softmax, and the value blend.',
     tags: ['computer science', 'deep learning', 'transformers'],
-    // NOTE: still at the old top-level path, not yet migrated into explainers/.
-    deck: new URL('../self-attention/self-attention-deck.html', import.meta.url).href,
-    video: new URL('../self-attention/self-attention.mp4', import.meta.url).href,
-    poster: new URL('../self-attention/poster.jpg', import.meta.url).href,
+    deck: new URL('./self-attention/deck.html', import.meta.url).href,
+    video: new URL('./self-attention/self-attention.mp4', import.meta.url).href,
+    poster: new URL('./self-attention/poster.jpg', import.meta.url).href,
   },
   {
     id: 'natural-selection',
