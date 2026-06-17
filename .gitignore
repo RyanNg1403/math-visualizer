@@ -10,3 +10,4 @@ verify_frames/
 .codex/*
 !.codex/skills/
 skill-eval/
+docs/.scratch/

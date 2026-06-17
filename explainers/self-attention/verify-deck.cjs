@@ -49,7 +49,7 @@ async function main() {
   page.on('console', msg => messages.push({type: msg.type(), text: msg.text()}));
   page.on('pageerror', err => messages.push({type: 'pageerror', text: err.stack || err.message}));
 
-  await page.goto('http://127.0.0.1:8300/self-attention-deck.html', {waitUntil: 'networkidle'});
+  await page.goto('http://127.0.0.1:8300/deck.html', {waitUntil: 'networkidle'});
   await page.waitForFunction(() => window.__deck && window.katex);
   await flush(page);
 

@@ -2,7 +2,7 @@
 
 ## Artifacts
 
-- Interactive deck: `self-attention-deck.html`
+- Interactive deck: `deck.html`
 - Final video: `self-attention.mp4`
 - Motion Canvas source/render: `motion-canvas/`
 - Verification evidence: `evidence/`
